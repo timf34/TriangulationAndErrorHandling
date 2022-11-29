@@ -3,6 +3,7 @@ from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 
+from typing import Tuple, List
 
 from data.bohs_dataset import TriangulationBohsDataset, create_triangulation_dataset
 
@@ -35,7 +36,8 @@ class TriangulationVisualization:
         for i, (image_1, image_2, box_1, box_2, label_1, label_2, image_path_1, image_path_2) in enumerate(self.dataset):
 
             pitch_image = self.draw_point(500, 500)
-            self.plot_images(image_1, image_2, pitch_image)
+            # self.plot_images(image_1, image_2, pitch_image)
+            print(box_1)
             # Wait for user to press a key before showing next plot
             plt.waitforbuttonpress(0)
             plt.close()
