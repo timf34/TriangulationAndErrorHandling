@@ -2,16 +2,15 @@ import matplotlib.pyplot as plt
 
 
 from data.bohs_dataset import TriangulationBohsDataset, create_triangulation_dataset
-from data.visualizing_data import TriangulationVisualization
 
 
-class Triangulation:
+class TriangulationVisualization:
     def __init__(self):
         self.dataset = create_triangulation_dataset()
 
     @staticmethod
     def plot_images(image_1, image_2):
-        fig, (ax1, ax2) = plt.subplots(1, 2)
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(5, 5), tight_layout=True, gridspec_kw={'hspace': .1})
         ax1.imshow(image_1)
         ax2.imshow(image_2)
         plt.show(block=False)
@@ -28,7 +27,7 @@ class Triangulation:
 
 
 def main():
-    triangulation = Triangulation()
+    triangulation = TriangulationVisualization()
     triangulation.run()
 
 
