@@ -1,3 +1,4 @@
+import cv2
 import os
 import torch
 
@@ -115,6 +116,13 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
         box_1, label_1 = self.get_annotations(camera_id_1, image_ndx_1)
         box_2, label_2 = self.get_annotations(camera_id_2, image_ndx_2)
 
+        # Convert PIL image to numpy array
+        image_1 = np.array(image_1)
+        image_2 = np.array(image_2)
+
+        image_1 = self.draw_bboxes(image_1, box_1)
+        image_2 = self.draw_bboxes(image_2, box_2)
+
         return image_1, image_2, box_1, box_2, label_1, label_2, image_path_1, image_path_2
 
     def get_annotations(self, camera_id, image_ndx):
@@ -175,6 +183,23 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
         self.image_list = image_list
         self.n_images = len(image_list)
         return image_list
+
+    @staticmethod
+    def draw_bboxes(image, boxes):
+        """
+        Draw bounding boxes on the image
+        :param image: image to draw bounding boxes on, numpy array
+        :param boxes:...
+        """
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        for box in boxes:
+            x1, y1, x2, y2 = box
+            x = int((x1 + x2) / 2)
+            y = int((y1 + y2) / 2)
+            color = (255, 0, 0)
+            radius = 30
+            cv2.circle(image, (x, y), radius, color, 2)
+        return image
 
     @staticmethod
     def create_new_folder(folder_name) -> None:
