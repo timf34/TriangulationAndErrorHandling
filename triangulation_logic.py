@@ -16,6 +16,8 @@ MAX_SPEED = 40
 # are set up in real life. But for now, 100 will do as we are dealing with a frame rate of 25 FPS
 MAX_DELTA_T = 75
 
+# Generally inspired from: https://github.com/HaziqRazali/Soccer-Tracker
+
 
 class MultiCameraTracker:
     def __init__(self, gt_path):
@@ -69,8 +71,8 @@ class MultiCameraTracker:
         # In case there are no detections
         three_d_pos = None
 
-        # TODO: need to extend this to handle more than two detections
-        if len(detections) is 2:
+        # TODO: need to extend this to handle more than two detections... but should keep it simple for now! This would be significantly more complicated
+        if len(detections) == 2:
 
             # deleting the plane
             self.plane = None
@@ -91,7 +93,7 @@ class MultiCameraTracker:
                 three_d_pos = None
                 print("!!!the detected ball is out of range!!!")
 
-        if len(detections) is 1:
+        if len(detections) == 1:
             if self.plane is None:
                 self.plane = self.form_plane()
 
@@ -123,8 +125,6 @@ class MultiCameraTracker:
             *detections: Detections objects iterable, where detection.z=1.0 (we've hard coded that in here)
         Returns: list of Detections objects with homographied x and y coordinates
         """
-        # homo_dict = {i: (self.homographies[i] @ detections[i]) for i in detections}
-        # homo_dict = {i: (homo_dict[i] / homo_dict[i][2]) for i in homo_dict}
 
         dets_ = []
 
