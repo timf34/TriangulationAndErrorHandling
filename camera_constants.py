@@ -1,6 +1,85 @@
 import numpy as np
 import cv2
 
+from typing import NamedTuple, Tuple, List
+
+
+class CameraJetson1:
+    def __init__(self):
+        # Note: this definitely is not he cleanest way to do this, but it works for now
+        #  What would be better is to have a config file that stores all of this information as a dictionary maybe
+        # Structure is (x_pixel_coords, y_pixel_coords)
+        self.corner1: Tuple[int, int] = (807, 1005)
+        self.corner2: Tuple[int, int] = (9, 646)
+        self.bixBox1: Tuple[int, int] = (475, 886)
+        self.bixBox2: Tuple[int, int] = (1062, 817)
+        self.bixBox3: Tuple[int, int] = (406, 665)
+        self.bigBox4: Tuple[int, int] = None
+        self.box1: Tuple[int, int] = (295, 784)
+        self.box2: Tuple[int, int] = (471, 772)
+        self.box3: Tuple[int, int] = (262, 698)
+        self.box4: Tuple[int, int] = (57, 673)
+        self.goalPost1: Tuple[int, int] = (229, 748)  # They can be floats!
+        self.goalPost2: Tuple[int, int] = (161, 716)
+        self.semiCircle1: Tuple[int, int] = (775, 751)
+        self.semiCircle2: Tuple[int, int] = (618, 771)
+        self.boxParallel1: Tuple[int, int] = (1416, 899)
+        self.boxParallel2: Tuple[int, int] = None
+        self.circle1: Tuple[int, int] = (1487, 899)
+        self.circle2: Tuple[int, int] = (1172, 669)
+        self.halfway1: Tuple[int, int] = None
+
+
+class CameraJetson2:
+    def __init__(self):
+        # Note: this definitely is not he cleanest way to do this, but it works for now
+        #  What would be better is to have a config file that stores all of this information as a dictionary maybe
+        self.corner1: Tuple[int, int] = (1801, 298)
+        self.corner2: Tuple[int, int] = (1800, 827)
+        self.bixBox1: Tuple[int, int] = None
+        self.bixBox2: Tuple[int, int] = (1408, 310)
+        self.bixBox3: Tuple[int, int] =(983, 534)
+        self.bigBox4: Tuple[int, int] = (1809, 595)
+        self.box1: Tuple[int, int] = (642, 709)
+        self.box2: Tuple[int, int] = (1655, 355)
+        self.box3: Tuple[int, int] = (1598, 456)
+        self.box4: Tuple[int, int] = (1809, 471)
+        self.goalPost1: Tuple[int, int] = (1806, 387)
+        self.goalPost2: Tuple[int, int] = (1810, 427)
+        self.semiCircle1: Tuple[int, int] = (1329, 347)
+        self.semiCircle2: Tuple[int, int] = (1188, 419)
+        self.boxParallel1: Tuple[int, int] = None
+        self.boxParallel2: Tuple[int, int] = None
+        self.circle1: Tuple[int, int] = (531, 323)
+        self.circle2: Tuple[int, int] = (202, 398)
+        self.halfway1: Tuple[int, int] = None
+
+
+class RealWorldPitchCoords:
+    def __init__(self):
+        self.corner1: Tuple[int, int] = (0, 0)
+        self.corner2: Tuple[int, int]= (0, 64)
+        self.bixBox1: Tuple[int, int] =(0, 10)
+        self.bixBox2: Tuple[int, int] = (16, 10)
+        self.bixBox3: Tuple[int, int] =(16, 54)
+        self.bigBox4: Tuple[int, int] = None
+        self.box1: Tuple[int, int] = (0, 23)
+        self.box2: Tuple[int, int] = (5, 23)
+        self.box3: Tuple[int, int] = (5, 41)
+        self.box4: Tuple[int, int] = (0, 41)
+        self.goalPost1:Tuple[int, float] = (0, 29.5)  # They can be floats!
+        self.goalPost2:Tuple[int, float] = (0, 34.5)
+        self.semiCircle1:Tuple[int, int] = (16, 24)
+        self.semiCircle2: Tuple[int, int] = (16, 40)
+        self.boxParallel1:Tuple[int, int] = (16, 0)
+        self.boxParallel2: Tuple[int, int] = None
+        self.circle1: Tuple[int, int] = (51, 24)
+        self.circle2: Tuple[int, int] = (51, 40)
+        self.halfway1: Tuple[int, int] = None
+
+
+
+########### Legacy Code ############
 
 def compute_homographies():
     """
@@ -15,6 +94,7 @@ def compute_homographies():
                            [290, 100], [125, 305], [395, 300], [270, 525], [1105, 895], [1625, 125], [1070, 130],
                            [625, 400],
                            [943, 97], [877, 1030], [1104, 1033], [1779, 1035], [1430, 95]])
+
     world_pts5 = np.array([[27.01278, 24.034], [27.8374, 34.5678], [28.2874, 58.0262], [7.73866, 57.9556],
                            [7.58353, 9.54519],
                            [16.3643, 13.7746], [16.3566, 54.0618], [0.0786684, 54.0799], [0.105432, 67.9509],
