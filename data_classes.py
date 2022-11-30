@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import NamedTuple
 
 
+# TODO: will change this to accept a box, and then process the box to get x, y coordinates... maybe
 @dataclass
 class Detections:
     camera_id: int
