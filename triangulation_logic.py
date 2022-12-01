@@ -1,6 +1,6 @@
 import json
 from collections import namedtuple
-from camera_constants import *
+from camera_homography import *
 from data_classes import *
 import numpy as np
 
@@ -38,12 +38,12 @@ class MultiCameraTracker:
         FieldDimensions = namedtuple('FieldDimensions', 'width length')
         self.field_model = FieldDimensions(68, 105)
         # Path to the json file for working with while developing
-        self.gt_path = gt_path
-        with open(self.gt_path) as file:
-            ball_data = json.load(file)
+        # self.gt_path = gt_path
+        # with open(self.gt_path) as file:
+        #     ball_data = json.load(file)
         # Ball data: dict of lists with key value pairs {'camera_id': [(frame, x, y),...]}
-        assert isinstance(ball_data, object)
-        self.ball_data = ball_data
+        # assert isinstance(ball_data, object)
+        # self.ball_data = ball_data
 
     def add_camera(self, idx, real_world_camera_coords):
         self.homographies[str(idx)] = homography_idx(str(idx))
@@ -264,8 +264,8 @@ def triangulate(ball_p, cam_p, ball_q, cam_q):
     detections belong to, to apply the correct homography.
     camP and camQ are the cameras real world positions with attribute x, y and z.
     This function uses mid-point triangulation ->
-    https://en.wikipedia.org/wiki/Triangulation_(computer_vision)#Mid-point_method """
-
+    https://en.wikipedia.org/wiki/Triangulation_(computer_vision)#Mid-point_method
+    """
     ball_p = np.array([[ball_p.x], [ball_p.y], [ball_p.z]])
     ball_q = np.array([[ball_q.x], [ball_q.y], [ball_q.z]])
 
