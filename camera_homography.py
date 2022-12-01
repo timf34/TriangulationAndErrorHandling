@@ -127,51 +127,26 @@ def compute_homography():
     h2, status2 = cv2.findHomography(j2_arr, world_points2)
 
     # # Save the homography
-    # np.save("h1.npy", h1)
-    # np.save("h2.npy", h2)
+    np.save("h1.npy", h1)
+    np.save("h2.npy", h2)
     #
     # # Load the homography
-    # h1 = np.load("h1.npy")
-    # h2 = np.load("h2.npy")
+    h1 = np.load("h1.npy")
+    h2 = np.load("h2.npy")
 
     # Test the homography
     # Fix here: https://answers.opencv.org/question/252/cv2perspectivetransform-with-python/
-    test_point = np.array([[[1408, 310]]], dtype='float32')
-
-    print(h1)
-
-    out = cv2.perspectiveTransform(test_point, h1)  # This doesn't give good results at all...
-    out2 = cv2.perspectiveTransform(src=test_point, m=h1, dst=None)
-    print(out)
-    print(out2)
-
-    # print(test_point.T)
-    # test_point = test_point.reshape(-1, 3)
-
-    # Transform the point
-    # transformed_point = cv2.perspectiveTransform(test_point, h1)
-    # print(transformed_point)
+    # test_point = np.array([[1408, 310], 1.0], dtype='float32')
 
     # # Transform the point
-    # transformed_point = h2 @ test_point  # Where .T is the transpose of the matrix
-    # # transformed_point = h2 @ test_point
-    # transformed_point = transformed_point / transformed_point[2]
+    test_point = np.array([[1408], [310], [1.0]], dtype='float32')
 
-    # print(transformed_point)
+    transformed_point = h2 @ test_point  # This isn't super accurate but we'll use it just to move on for now.
+    transformed_point = transformed_point / transformed_point[2]
 
-    # Tranform the points using cv2.perspectiveTransform
-    # j1_arr = np.array([[[1408, 310]]])
-    # transformed_points = cv2.perspectiveTransform(j1_arr, h1)
-    # print(transformed_points)
+    assert transformed_point.shape == (3, 1), "The transformed point is not 3x1"
 
-    # This works
-    # a = np.array([[[1, 2]]], dtype='float32')
-    # h = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype='float32')
-    # print(h)
-    # #
-    # pointsOut = cv2.perspectiveTransform(a, h)
-    # #
-    # print(pointsOut)
+    return transformed_point
 
 
 
