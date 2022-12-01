@@ -1,3 +1,4 @@
+import numpy as np
 import os
 
 from collections import defaultdict
@@ -82,3 +83,15 @@ def read_bohs_ground_truth(annotations_path: str, xml_file_name: str) -> Sequenc
     xml_file_path = os.path.join(annotations_path, xml_file_name)
     gt = _load_bohs_groundtruth(xml_file_path)
     return _create_bohs_annotations(gt)
+
+
+def get_xy_from_box(box: np.array) -> Tuple[int, int]:
+    """
+        This function gets x and y from an ndarray of shape (1, 4)
+    :param box:
+    :return:
+    """
+    x1, y1, x2, y2 = box
+    x = int((x1 + x2) / 2)
+    y = int((y1 + y2) / 2)
+    return x, y
