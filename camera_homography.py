@@ -30,8 +30,8 @@ class CameraJetson1:
         self.halfway1: Tuple[int, int] = None
 
         # Real world camera coordinates
-        self.real_world_x: float = 19.41
-        self.real_world_y: float = 21.85
+        self.real_world_x: float = -19.41
+        self.real_world_y: float = -21.85
         self.real_world_z: float = 7.78
 
 
@@ -88,7 +88,7 @@ class RealWorldPitchCoords:
         self.halfway1: Tuple[int, int] = None
 
 
-def compute_homography():
+def compute_homographies():
     jetson1 = CameraJetson1()
     jetson3 = CameraJetson3()
     jetsons = [jetson1, jetson3]
@@ -146,7 +146,10 @@ def compute_homography():
 
     assert transformed_point.shape == (3, 1), "The transformed point is not 3x1"
 
-    return transformed_point
+    # Temp code
+    homographies = {"1": h1, "3": h2}
+
+    return homographies
 
 
 
@@ -197,7 +200,7 @@ def legacy_compute_homographies():
 
 def homography_idx(camera_id):
     # This returns the homography matrix, given a camera number (where the number is a string!)
-    homography_dict = legacy_compute_homographies()
+    homography_dict = compute_homographies()
 
     if camera_id in homography_dict:
         return homography_dict[camera_id]
@@ -207,7 +210,7 @@ def homography_idx(camera_id):
 
 
 def main():
-    compute_homography()
+    compute_homographies()
 
 
 if __name__ == '__main__':
