@@ -9,8 +9,8 @@ PITCH_JPG = r'C:\Users\timf3\Pictures\fieldmodel.jpg'
 RED = (255, 0, 0)
 RADIUS = 1
 THICKNESS = 1
-CAMERA_5_CALIBRATION = np.array([[9.31], [-33.97], [59.5]])
-CAMERA_6_CALIBRATION = np.array([[27.84], [102.09], [58.83]])
+JETSON1_REAL_WORLD = np.array([[-19.41], [-21.85], [7.78]])
+JETSON3_REAL_WORLD = np.array([[0.], [86.16], [7.85]])
 MAX_SPEED = 40
 # This is a constant for the ball_speed method and is an arbitrary constant that will need to be changed for once we
 # are set up in real life. But for now, 100 will do as we are dealing with a frame rate of 25 FPS
@@ -20,7 +20,7 @@ MAX_DELTA_T = 75
 
 
 class MultiCameraTracker:
-    def __init__(self, gt_path):
+    def __init__(self):
         # This is a dict for all the camera objects, where the key is the camera id... and yes, the id will be stored
         # twice. Once as a kay, and a again as the first value in the tuple.
         self.cameras = {}
@@ -297,20 +297,14 @@ def triangulate(ball_p, cam_p, ball_q, cam_q):
 if __name__ == '__main__':
     # TODO: at this stage, our detections are wrapped in three numpy arrays! Look into getting rid of them!
 
-    yolo = MultiCameraTracker(GT_PATH)
+    yolo = MultiCameraTracker()
     # adding cameras to the tracker object
-    yolo.add_camera(5, CAMERA_5_CALIBRATION)
-    yolo.add_camera(6, CAMERA_6_CALIBRATION)
+    yolo.add_camera(1, JETSON1_REAL_WORLD)
+    yolo.add_camera(3, JETSON3_REAL_WORLD)
 
-    d1 = Detections(camera_id=5, probability=0.9, timestamp=12, x=1000, y=500, z=0)
-    d2 = Detections(camera_id=6, probability=0.9, timestamp=12, x=900, y=550, z=0)
-
-    d3 = Detections(camera_id=5, probability=0.9, timestamp=13, x=100, y=550, z=0)
-    d4 = Detections(camera_id=6, probability=0.9, timestamp=13, x=950, y=540, z=0)
+    d1 = Detections(camera_id=1, probability=0.9, timestamp=12, x=1062, y=817, z=0)
+    d2 = Detections(camera_id=3, probability=0.9, timestamp=12, x=1408, y=310, z=0)
 
     x = yolo.multi_camera_analysis(d1, d2)
-    y = yolo.multi_camera_analysis(d3, d4)
 
     print("resulting coordinates 1: ", x)
-    print("\n")
-    print("resulting coordinates 2: ", y)
