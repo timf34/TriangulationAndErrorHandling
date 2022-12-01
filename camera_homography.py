@@ -68,8 +68,8 @@ class CameraJetson3:
 class RealWorldPitchCoords:
     def __init__(self):
         self.corner1: Tuple[int, int] = (0, 0)
-        self.corner2: Tuple[int, int]= (0, 64)
-        self.bixBox1: Tuple[int, int] =(0, 10)
+        self.corner2: Tuple[int, int] =(0, 64)
+        self.bixBox1: Tuple[int, int] = (0, 10)
         self.bixBox2: Tuple[int, int] = (16, 10)
         self.bixBox3: Tuple[int, int] =(16, 54)
         self.bigBox4: Tuple[int, int] = None
@@ -90,32 +90,92 @@ class RealWorldPitchCoords:
 
 def compute_homography():
     jetson1 = CameraJetson1()
-    jetson2 = CameraJetson2()
-    jetsons = [jetson1, jetson2]
+    jetson3 = CameraJetson3()
+    jetsons = [jetson1, jetson3]
     real_world = RealWorldPitchCoords()
 
     # Create an empty np array to store the pixel coordinates
     j1_arr = np.array([])
     j2_arr = np.array([])
 
-    world_points = np.array([])
+
+    # Get the pixel coordinates from the jetson cameras, and the real world coordinates. Convert to NP.arrays
+    world_points1 = np.array([])
     for key in jetson1.__dict__.keys():
         if key in real_world.__dict__.keys() and real_world.__dict__[key] is not None and jetson1.__dict__[key] is not None:
-            print(jetson1.__dict__[key])
             j1_arr = np.append(j1_arr, jetson1.__dict__[key], axis=0)  # TODO: make a python learning script where I add tuples to a numpy array... make sure I can add them as distinct points
-            world_points = np.append(world_points, real_world.__dict__[key])
+            world_points1 = np.append(world_points1, real_world.__dict__[key])
 
-    # TODO: look to np_array_appending for how to do this using .reshape(-1, 2)
+    j1_arr = j1_arr.reshape(-1, 2)
+    world_points1 = world_points1.reshape(-1, 2)
 
-    print(j1_arr)
-    print(world_points)
+    world_points2 = np.array([])
+    for key in jetson3.__dict__.keys():
+        if key in real_world.__dict__.keys() and real_world.__dict__[key] is not None and jetson3.__dict__[key] is not None:
+            j2_arr = np.append(j2_arr, jetson3.__dict__[key], axis=0)
+            world_points2 = np.append(world_points2, real_world.__dict__[key])
+    j2_arr = j2_arr.reshape(-1, 2)
+    world_points2 = world_points2.reshape(-1, 2)
+
+    assert len(j2_arr) == len(world_points2), "The number of points in the jetson 3 array and the real world array are not the same"
+    assert len(j1_arr) == len(world_points1), "The number of points in the jetson 1 array and the real world array are not the same"
+    assert j1_arr.shape[1] == 2, "The jetson 1 array is not 2D"
+    assert j2_arr.shape[1] == 2, "The jetson 2 array is not 2D"
+
+    # Compute the homography
+    h1, status1 = cv2.findHomography(j1_arr, world_points1)
+    h2, status2 = cv2.findHomography(j2_arr, world_points2)
+
+    # # Save the homography
+    # np.save("h1.npy", h1)
+    # np.save("h2.npy", h2)
+    #
+    # # Load the homography
+    # h1 = np.load("h1.npy")
+    # h2 = np.load("h2.npy")
+
+    # Test the homography
+    # Fix here: https://answers.opencv.org/question/252/cv2perspectivetransform-with-python/
+    test_point = np.array([[[1408, 310]]], dtype='float32')
+
+    print(h1)
+
+    out = cv2.perspectiveTransform(test_point, h1)  # This doesn't give good results at all...
+    out2 = cv2.perspectiveTransform(src=test_point, m=h1, dst=None)
+    print(out)
+    print(out2)
+
+    # print(test_point.T)
+    # test_point = test_point.reshape(-1, 3)
+
+    # Transform the point
+    # transformed_point = cv2.perspectiveTransform(test_point, h1)
+    # print(transformed_point)
+
+    # # Transform the point
+    # transformed_point = h2 @ test_point  # Where .T is the transpose of the matrix
+    # # transformed_point = h2 @ test_point
+    # transformed_point = transformed_point / transformed_point[2]
+
+    # print(transformed_point)
+
+    # Tranform the points using cv2.perspectiveTransform
+    # j1_arr = np.array([[[1408, 310]]])
+    # transformed_points = cv2.perspectiveTransform(j1_arr, h1)
+    # print(transformed_points)
+
+    # This works
+    # a = np.array([[[1, 2]]], dtype='float32')
+    # h = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype='float32')
+    # print(h)
+    # #
+    # pointsOut = cv2.perspectiveTransform(a, h)
+    # #
+    # print(pointsOut)
 
 
-    print(real_world.__dict__)
 
-
-
-########### Legacy Code ############
+"""########### Legacy Code ############"""
 
 def legacy_compute_homographies():
     """
