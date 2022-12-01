@@ -29,8 +29,13 @@ class CameraJetson1:
         self.circle2: Tuple[int, int] = (1172, 669)
         self.halfway1: Tuple[int, int] = None
 
+        # Real world camera coordinates
+        self.real_world_x: float = 19.41
+        self.real_world_y: float = 21.85
+        self.real_world_z: float = 7.78
 
-class CameraJetson2:
+
+class CameraJetson3:
     def __init__(self):
         # Note: this definitely is not he cleanest way to do this, but it works for now
         #  What would be better is to have a config file that stores all of this information as a dictionary maybe
@@ -53,6 +58,11 @@ class CameraJetson2:
         self.circle1: Tuple[int, int] = (531, 323)
         self.circle2: Tuple[int, int] = (202, 398)
         self.halfway1: Tuple[int, int] = None
+
+        # Real world camera coordinates
+        self.real_world_x: float = 0.
+        self.real_world_y: float = 86.16
+        self.real_world_z: float = 7.85
 
 
 class RealWorldPitchCoords:
@@ -78,10 +88,36 @@ class RealWorldPitchCoords:
         self.halfway1: Tuple[int, int] = None
 
 
+def compute_homography():
+    jetson1 = CameraJetson1()
+    jetson2 = CameraJetson2()
+    jetsons = [jetson1, jetson2]
+    real_world = RealWorldPitchCoords()
+
+    # Create an empty np array to store the pixel coordinates
+    j1_arr = np.array([])
+    j2_arr = np.array([])
+
+    world_points = np.array([])
+    for key in jetson1.__dict__.keys():
+        if key in real_world.__dict__.keys() and real_world.__dict__[key] is not None and jetson1.__dict__[key] is not None:
+            print(jetson1.__dict__[key])
+            j1_arr = np.append(j1_arr, jetson1.__dict__[key], axis=0)  # TODO: make a python learning script where I add tuples to a numpy array... make sure I can add them as distinct points
+            world_points = np.append(world_points, real_world.__dict__[key])
+
+    # TODO: look to np_array_appending for how to do this using .reshape(-1, 2)
+
+    print(j1_arr)
+    print(world_points)
+
+
+    print(real_world.__dict__)
+
+
 
 ########### Legacy Code ############
 
-def compute_homographies():
+def legacy_compute_homographies():
     """
     Note that currently this function is super messy and so I have stored it in another python file - going forward,
     I should probably just make a proper config file which has the actual matrices but this will do for now.
@@ -126,10 +162,18 @@ def compute_homographies():
 
 def homography_idx(camera_id):
     # This returns the homography matrix, given a camera number (where the number is a string!)
-    homography_dict = compute_homographies()
+    homography_dict = legacy_compute_homographies()
 
     if camera_id in homography_dict:
         return homography_dict[camera_id]
     else:
         print(str(camera_id) + ' does not have a key in homography_dict')
         raise KeyError
+
+
+def main():
+    compute_homography()
+
+
+if __name__ == '__main__':
+    main()
