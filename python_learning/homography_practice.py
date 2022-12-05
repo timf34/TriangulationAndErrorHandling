@@ -178,12 +178,53 @@ class HomographyMethods:
         print(f"Real world coords: \n {real_world_coords.T}")
         print(f"The ground truth real world coordinates are: \n{four_real_coords}")
 
+    def extending_using_four_points(self):
+        """
+        This function will extend `def using_four_points()` to use arbitrary amount of corresponding points to
+        calculate the homography matrix and convert image coordinates to real world coordinates
+        """
+        image_coords = self.image_coords
+        real_world_coords = self.real_world_coords
+
+        # Convert the image coordinates to homogeneous coordinates
+        image_coords = np.hstack((image_coords, np.ones((image_coords.shape[0], 1))))
+
+        # Convert the real world coordinates to homogeneous coordinates (i.e. add a 1 to the end of each point)
+        real_world_coords = np.hstack((real_world_coords, np.ones((real_world_coords.shape[0], 1))))
+
+        # Compute the homography matrix using the n corresponding points and the DLT algorithm
+        A = []
+        for fp, tp in zip(image_coords, real_world_coords):
+            A.append([0, 0, 0, -fp[0], -fp[1], -1, tp[1] * fp[0], tp[1] * fp[1], tp[1]])
+            A.append([fp[0], fp[1], 1, 0, 0, 0, -tp[0] * fp[0], -tp[0] * fp[1], -tp[0]])
+        A = np.array(A)
+        U, S, V = np.linalg.svd(A)
+        H = V[-1].reshape((3, 3))
+
+        # Normalize the homography matrix
+        H = H / H[2, 2]
+
+        print("\n---------------------------------\n")
+        # Convert the image coordinates to real world coordinates
+        real_world_coords = np.dot(H, image_coords.T)
+
+        # Divide by the last element to get the real world coordinates
+        real_world_coords = real_world_coords / real_world_coords[2]
+
+        print("\n\nExtending using four points...")
+        print(f"Homography: \n {H}")
+        # Round the real world coordinates to 2 decimal places
+        real_world_coords = np.round(real_world_coords, 1)
+        print(f"Image coords: \n {image_coords.astype(int)}")
+        print(f"Real world coords: \n {real_world_coords.T}")
+        print(f"The ground truth real world coordinates are: \n{self.real_world_coords}")
 
 def main():
     hom = HomographyMethods()
     hom.h_from_points()
     hom.gpt_homography()
     hom.using_four_points()
+    hom.extending_using_four_points()
 
 
 if __name__ == '__main__':

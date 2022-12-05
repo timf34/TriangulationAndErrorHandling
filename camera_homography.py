@@ -67,24 +67,24 @@ class CameraJetson3:
 
 class RealWorldPitchCoords:
     def __init__(self):
-        self.corner1: Tuple[int, int] = (0, 0)
-        self.corner2: Tuple[int, int] =(0, 64)
-        self.bixBox1: Tuple[int, int] = (0, 10)
-        self.bixBox2: Tuple[int, int] = (16, 10)
-        self.bixBox3: Tuple[int, int] =(16, 54)
-        self.bigBox4: Tuple[int, int] = None
-        self.box1: Tuple[int, int] = (0, 23)
-        self.box2: Tuple[int, int] = (5, 23)
-        self.box3: Tuple[int, int] = (5, 41)
-        self.box4: Tuple[int, int] = (0, 41)
-        self.goalPost1: Tuple[int, float] = (0, 29.5)  # They can be floats!
-        self.goalPost2: Tuple[int, float] = (0, 34.5)
-        self.semiCircle1: Tuple[int, int] = (16, 24)
-        self.semiCircle2: Tuple[int, int] = (16, 40)
-        self.boxParallel1: Tuple[int, int] = (16, 0)
+        self.corner1: Tuple[int, int] = (0, 64)
+        self.corner2: Tuple[int, int] =(0, 0)
+        self.bixBox1: Tuple[int, int] = (0, 54)
+        self.bixBox2: Tuple[int, int] = (16, 54)
+        self.bixBox3: Tuple[int, int] = (16, 10)
+        self.bigBox4: Tuple[int, int] = (0, 10)
+        self.box1: Tuple[int, int] = (0, 41)
+        self.box2: Tuple[int, int] = (5, 41)
+        self.box3: Tuple[int, int] = (5, 23)
+        self.box4: Tuple[int, int] = (0, 23)
+        self.goalPost1: Tuple[int, float] = (0, 34.5)  # They can be floats!
+        self.goalPost2: Tuple[int, float] = (0, 19.5)
+        self.semiCircle1: Tuple[int, int] = (16, 40)
+        self.semiCircle2: Tuple[int, int] = (16, 24)
+        self.boxParallel1: Tuple[int, int] = (16, 64)
         self.boxParallel2: Tuple[int, int] = None
-        self.circle1: Tuple[int, int] = (51, 24)
-        self.circle2: Tuple[int, int] = (51, 40)
+        self.circle1: Tuple[int, int] = (51, 40)
+        self.circle2: Tuple[int, int] = (51, 24)
         self.halfway1: Tuple[int, int] = None
 
 
