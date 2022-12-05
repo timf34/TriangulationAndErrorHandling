@@ -108,7 +108,7 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, ndx):
         # Returns transferred image as a normalized tensor
-        image_path_1, image_path_2, camera_id_1, camera_id_2, image_ndx_1, image_ndx_2 = self.image_list[2000]  # TODO: Convert self.image_list to contain two paths at once for matching frames.
+        image_path_1, image_path_2, camera_id_1, camera_id_2, image_ndx_1, image_ndx_2 = self.image_list[ndx]  # TODO: Convert self.image_list to contain two paths at once for matching frames.
 
         image_1 = Image.open(image_path_1)
         image_2 = Image.open(image_path_2)
