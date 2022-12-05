@@ -150,7 +150,7 @@ class HomographyMethods:
         four_image_coords = np.hstack((four_image_coords, np.ones((four_image_coords.shape[0], 1))))
 
         # Convert the real world coordinates to homogeneous coordinates (i.e. add a 1 to the end of each point)
-        four_real_coords = np.hstack((four_real_coords_pixels, np.ones((four_real_coords_pixels.shape[0], 1))))
+        four_real_coords = np.hstack((four_real_coords_metres, np.ones((four_real_coords_metres.shape[0], 1))))
 
         # Compute the homography matrix using the four corresponding points and the DLT algorithm
         A = []
