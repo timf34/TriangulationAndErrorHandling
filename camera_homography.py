@@ -89,7 +89,7 @@ class RealWorldPitchCoords:
 
 
 def get_coords_as_array():
-    jetson1 = CameraJetson3()
+    jetson1 = CameraJetson1()
     real_world = RealWorldPitchCoords()
 
     # Create an empty np array to store the pixel coordinates
@@ -114,6 +114,46 @@ def get_coords_as_array():
 
     return j1_arr, world_points1
 
+
+def get_all_coords_as_arrays():
+    jetson1 = CameraJetson1()
+    jetson3 = CameraJetson3()
+    jetsons = [jetson1, jetson3]
+    real_world = RealWorldPitchCoords()
+
+    # Create an empty np array to store the pixel coordinates
+    j1_arr = np.array([])
+    j2_arr = np.array([])
+
+    # Get the pixel coordinates from the jetson cameras, and the real world coordinates. Convert to NP.arrays
+    world_points1 = np.array([])
+    for key in jetson1.__dict__.keys():
+        if key in real_world.__dict__.keys() and real_world.__dict__[key] is not None and jetson1.__dict__[
+            key] is not None:
+            j1_arr = np.append(j1_arr, jetson1.__dict__[key],
+                               axis=0)  # TODO: make a python learning script where I add tuples to a numpy array... make sure I can add them as distinct points
+            world_points1 = np.append(world_points1, real_world.__dict__[key])
+
+    j1_arr = j1_arr.reshape(-1, 2)
+    world_points1 = world_points1.reshape(-1, 2)
+
+    world_points2 = np.array([])
+    for key in jetson3.__dict__.keys():
+        if key in real_world.__dict__.keys() and real_world.__dict__[key] is not None and jetson3.__dict__[
+            key] is not None:
+            j2_arr = np.append(j2_arr, jetson3.__dict__[key], axis=0)
+            world_points2 = np.append(world_points2, real_world.__dict__[key])
+    j2_arr = j2_arr.reshape(-1, 2)
+    world_points2 = world_points2.reshape(-1, 2)
+
+    assert len(j2_arr) == len(
+        world_points2), "The number of points in the jetson 3 array and the real world array are not the same"
+    assert len(j1_arr) == len(
+        world_points1), "The number of points in the jetson 1 array and the real world array are not the same"
+    assert j1_arr.shape[1] == 2, "The jetson 1 array is not 2D"
+    assert j2_arr.shape[1] == 2, "The jetson 2 array is not 2D"
+
+    return j1_arr, j2_arr, world_points1, world_points2
 
 def compute_homographies():
     jetson1 = CameraJetson1()
@@ -170,13 +210,13 @@ def compute_homographies():
 
     transformed_point = h2 @ test_point  # This isn't super accurate but we'll use it just to move on for now.
     transformed_point = transformed_point / transformed_point[2]
-    print(transformed_point)
+    # print(transformed_point)
 
     # Test with h1
     test_point = np.array([[1062], [817], [1.0]], dtype='float32')
     transformed_point = h1 @ test_point  # This isn't super accurate but we'll use it just to move on for now.
     transformed_point = transformed_point / transformed_point[2]
-    print(transformed_point)
+    # print(transformed_point)
 
     assert transformed_point.shape == (3, 1), "The transformed point is not 3x1"
 

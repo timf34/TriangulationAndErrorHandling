@@ -4,6 +4,8 @@ from camera_homography import *
 from data_classes import *
 import numpy as np
 
+from python_learning.homography_practice import get_new_homographies
+
 GT_PATH = r'C:\Users\timf3\PycharmProjects\task2_3\gt_val_detections.json'
 PITCH_JPG = r'C:\Users\timf3\Pictures\fieldmodel.jpg'
 RED = (255, 0, 0)
@@ -29,7 +31,7 @@ class MultiCameraTracker:
         # This is a 2nd/ newest homography attribute, which works with the fact that we are going to be adding our
         # cameras to this class using the .add_camera method now instead. And also that we will be storing the
         # information for the homography matrices in the camera constants file.
-        self.homographies = {}
+        self.homographies = get_new_homographies()
         # Just a list of all the 3d points detected... primarily for when theres one detection &/ more error handling
         self.three_d_points = []
         # This is for the height estimation when theres just one detection
@@ -46,7 +48,7 @@ class MultiCameraTracker:
         # self.ball_data = ball_data
 
     def add_camera(self, idx, real_world_camera_coords):
-        self.homographies[str(idx)] = homography_idx(str(idx))
+        # self.homographies[str(idx)] = homography_idx(str(idx))
         cam = Camera(id=idx, homography=self.homographies[str(idx)], real_world_camera_coords=real_world_camera_coords)
         self.cameras[str(idx)] = cam
         self.camera_count = len(self.cameras)
@@ -221,8 +223,8 @@ class MultiCameraTracker:
 
         # Currently we are only checking for ball speed, but this should be extended
 
-        if self.ball_speed(possible_detection) > MAX_SPEED:
-            return False
+        # if self.ball_speed(possible_detection) > MAX_SPEED:
+        #     return False
 
         return True
 

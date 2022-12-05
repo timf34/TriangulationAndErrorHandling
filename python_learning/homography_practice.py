@@ -2,7 +2,7 @@
 import numpy as np
 import cv2
 
-from camera_homography import get_coords_as_array
+from camera_homography import get_coords_as_array, get_all_coords_as_arrays
 
 np.set_printoptions(suppress=True)
 
@@ -187,7 +187,8 @@ class HomographyMethods:
         """
         image_coords = self.image_coords
         # Subtract the first element of each element in image_coords from 1920 to get the mirror image x coord
-        image_coords = np.array([[1920 - x, y] for x, y in image_coords])
+        # TODO: Note this is only for Jetson3!
+        # image_coords = np.array([[1920 - x, y] for x, y in image_coords])
 
         real_world_coords = self.real_world_coords
 
@@ -224,12 +225,82 @@ class HomographyMethods:
         print(f"Real world coords: \n {real_world_coords.T}")
         print(f"The ground truth real world coordinates are: \n{self.real_world_coords}")
 
+        # # Test one more example for Jetson3
+        test_samp = np.array([[1317.], [683.], [1.]])
+        # test_samp = np.dot(H, test_samp)
+        # test_samp = test_samp / test_samp[2]
+        # print(f"Test sample: \n {test_samp}") # Looks all good! 7m 3m 1
+
+        # Test one more example for Jetson1
+        # test_samp = np.array([[366.], [355.], [1.]])
+        test_samp = np.dot(H, test_samp)
+        test_samp = test_samp / test_samp[2]
+        print(f"Test sample: \n {test_samp}")
+
+
+def get_new_homographies():
+    image_coords1, image_coords2, real_world_coords1, real_world_coords2 = get_all_coords_as_arrays()
+
+    homographies = {}
+
+    # Subtract the first element of each element in image_coords from 1920 to get the mirror image x coord
+    # image_coords1 = np.array([[1920 - x, y] for x, y in image_coords1])  # This was the error!!!! Only for jetson3!
+    image_coords2 = np.array([[1920 - x, y] for x, y in image_coords2])
+
+    # Convert the image coordinates to homogeneous coordinates
+    image_coords1 = np.hstack((image_coords1, np.ones((image_coords1.shape[0], 1))))
+
+    # Convert the real world coordinates to homogeneous coordinates (i.e. add a 1 to the end of each point)
+    real_world_coords1 = np.hstack((real_world_coords1, np.ones((real_world_coords1.shape[0], 1))))
+
+    # Compute the homography matrix using the n corresponding points and the DLT algorithm
+    A = []
+    for fp, tp in zip(image_coords1[:], real_world_coords1[:]):
+        A.append([0, 0, 0, -fp[0], -fp[1], -1, tp[1] * fp[0], tp[1] * fp[1], tp[1]])
+        A.append([fp[0], fp[1], 1, 0, 0, 0, -tp[0] * fp[0], -tp[0] * fp[1], -tp[0]])
+    A = np.array(A)
+    U, S, V = np.linalg.svd(A)
+    H = V[-1].reshape((3, 3))
+
+    # Normalize the homography matrix
+    H1 = H / H[2, 2]
+    homographies["1"] = H1
+
+    # Convert the image coordinates to homogeneous coordinates
+    image_coords2 = np.hstack((image_coords2, np.ones((image_coords2.shape[0], 1))))
+
+    # Convert the real world coordinates to homogeneous coordinates (i.e. add a 1 to the end of each point)
+    real_world_coords2 = np.hstack((real_world_coords2, np.ones((real_world_coords2.shape[0], 1))))
+
+    # Compute the homography matrix using the n corresponding points and the DLT algorithm
+    A = []
+    for fp, tp in zip(image_coords2[:], real_world_coords2[:]):
+        A.append([0, 0, 0, -fp[0], -fp[1], -1, tp[1] * fp[0], tp[1] * fp[1], tp[1]])
+        A.append([fp[0], fp[1], 1, 0, 0, 0, -tp[0] * fp[0], -tp[0] * fp[1], -tp[0]])
+    A = np.array(A)
+    U, S, V = np.linalg.svd(A)
+    H = V[-1].reshape((3, 3))
+
+    # Normalize the homography matrix
+    H2 = H / H[2, 2]
+    homographies["3"] = H2
+
+    return homographies
+
+
+
+
+
+
+
 def main():
     hom = HomographyMethods()
     # hom.h_from_points()
     # hom.gpt_homography()
     # hom.using_four_points()
     hom.extending_using_four_points()
+
+    h = get_new_homographies()
 
 
 if __name__ == '__main__':

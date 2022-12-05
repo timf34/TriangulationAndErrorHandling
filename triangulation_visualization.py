@@ -5,7 +5,19 @@ import matplotlib.pyplot as plt
 
 from typing import Tuple, List
 
-from data.bohs_dataset import TriangulationBohsDataset, create_triangulation_dataset
+from data.bohs_dataset import create_triangulation_dataset
+from data_classes import Detections
+from triangulation_logic import MultiCameraTracker
+
+JETSON1_REAL_WORLD = np.array([[-19.41], [-21.85], [7.78]])
+JETSON3_REAL_WORLD = np.array([[0.], [86.16], [7.85]])
+
+
+def get_xy_from_box(box: List[Tuple[int, int, int, int]]) -> Tuple[int, int]:
+    box = box[0]
+    x = (box[0] + box[2]) / 2
+    y = (box[1] + box[3]) / 2
+    return x, y
 
 
 class TriangulationVisualization:
@@ -33,17 +45,60 @@ class TriangulationVisualization:
         return cv2.circle(self.pitch_image, (x, y), 15, (255, 0, 0), -1)
 
     def run(self):
+        tracker = MultiCameraTracker()
+        tracker.add_camera(1, JETSON1_REAL_WORLD)
+        tracker.add_camera(3, JETSON3_REAL_WORLD)
+
+        # Create a video write object to save the matplotlib figure to
+        video_writer = cv2.VideoWriter('triangulation_visualization.avi', cv2.VideoWriter_fourcc(*'MJPG'), 10, (600, 600))
+
+        # We will now open the video write object and write the frames to it
+
         for i, (image_1, image_2, box_1, box_2, label_1, label_2, image_path_1, image_path_2) in enumerate(self.dataset):
 
-            pitch_image = self.draw_point(500, 500)
-            # self.plot_images(image_1, image_2, pitch_image)
+            # Get x and y coordinates of the box
+            x_1, y_1 = get_xy_from_box(box_2)
+            x_3, y_3 = get_xy_from_box(box_1)
+
+            # TODO: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
+            x_3 = 1920 - x_3
+
+            d1 = Detections(camera_id=1, probability=0.9, timestamp=i, x=x_1, y=y_1, z=0)
+            d2 = Detections(camera_id=3, probability=0.9, timestamp=i, x=x_3, y=y_3, z=0)
+            det = tracker.multi_camera_analysis(d1, d2)
+
+
+            if det is not None:
+                det.x = det.x * (1920 / 102)
+                det.y = det.y * (1218 / 64)
+                pitch_image = self.draw_point(int(det.x), int(det.y))
+            else:
+                pitch_image = self.draw_point(0, 0)
+            self.plot_images(image_1, image_2, pitch_image)
+
             print(box_1)
-            # Wait for user to press a key before showing next plot
-            plt.waitforbuttonpress(0)
+
+            # Write our plt figure to the video writer
+            # video_writer.write(cv2.cvtColor(pitch_image, cv2.COLOR_RGB2BGR))
+
+            # Clear the figure so we can plot the next frame
+            plt.clf()
             plt.close()
+
+            # Wait for user to press a key before showing next plot
+            # plt.waitforbuttonpress(0)
+            # plt.close()
 
             if i == 10:
                 break
+
+        # Close the video writer
+        video_writer.release()
+
+        # Close the figure
+        plt.close()
+
+
 
 
 def main():
