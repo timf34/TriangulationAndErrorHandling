@@ -2,6 +2,7 @@ import cv2
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 from typing import Tuple, List
 
@@ -29,10 +30,16 @@ class TriangulationVisualization:
     @staticmethod
     def plot_images(image_1, image_2, image_3):
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(5, 5), tight_layout=True, gridspec_kw={'hspace': .1})
+        # Add images to the figure without showing them
         ax1.imshow(image_1)
         ax2.imshow(image_2)
         ax3.imshow(image_3)
         plt.show(block=False)
+
+        # ax1.imshow(image_1)
+        # ax2.imshow(image_2)
+        # ax3.imshow(image_3)
+        # plt.show(block=False)
 
     def draw_point(self, x, y):
         """
@@ -54,7 +61,9 @@ class TriangulationVisualization:
 
         # We will now open the video write object and write the frames to it
 
+
         for i, (image_1, image_2, box_1, box_2, label_1, label_2, image_path_1, image_path_2) in enumerate(self.dataset):
+
 
             # Get x and y coordinates of the box
             x_1, y_1 = get_xy_from_box(box_2)
@@ -74,23 +83,44 @@ class TriangulationVisualization:
                 pitch_image = self.draw_point(int(det.x), int(det.y))
             else:
                 pitch_image = self.draw_point(0, 0)
-            self.plot_images(image_1, image_2, pitch_image)
 
-            print(box_1)
+            if i == 0:
+                fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(5, 5), tight_layout=True,
+                                                    gridspec_kw={'hspace': .1})
+                fig.canvas.draw()
+                # Add images to the figure without showing them
+                i1 = ax1.imshow(image_1)
+                i2 = ax2.imshow(image_2)
+                i3 = ax3.imshow(pitch_image)
+                plt.show(block=False)
+            else:
+                i1.set_data(image_1)
+                i2.set_data(image_2)
+                i3.set_data(pitch_image)
+                plt.show(block=False)
+                plt.pause(0.000001)
+                # Save the figure to the video writer
+                # video_writer.write(cv2.cvtColor(np.array(fig.canvas.renderer._renderer), cv2.COLOR_RGB2BGR))
+
+
+
+            # self.plot_images(image_1, image_2, pitch_image)
+
+            # print(box_1)
 
             # Write our plt figure to the video writer
             # video_writer.write(cv2.cvtColor(pitch_image, cv2.COLOR_RGB2BGR))
 
             # Clear the figure so we can plot the next frame
-            plt.clf()
-            plt.close()
+            # plt.clf()
+            # plt.close()
 
             # Wait for user to press a key before showing next plot
             # plt.waitforbuttonpress(0)
             # plt.close()
 
-            if i == 10:
-                break
+            # if i == 10:
+            #     break
 
         # Close the video writer
         video_writer.release()
@@ -103,6 +133,11 @@ class TriangulationVisualization:
 
 def main():
     triangulation = TriangulationVisualization()
+
+
+
+
+
     triangulation.run()
 
 
