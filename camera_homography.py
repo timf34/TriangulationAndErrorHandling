@@ -22,11 +22,11 @@ class CameraJetson1:
         self.goalPost1: Tuple[int, int] = (229, 748)  # They can be floats!
         self.goalPost2: Tuple[int, int] = (161, 716)
         self.semiCircle1: Tuple[int, int] = (775, 751)
-        self.semiCircle2: Tuple[int, int] = (618, 771)
+        self.semiCircle2: Tuple[int, int] = (545, 698)
         self.boxParallel1: Tuple[int, int] = (1416, 899)
         self.boxParallel2: Tuple[int, int] = None
-        self.circle1: Tuple[int, int] = (1487, 899)
-        self.circle2: Tuple[int, int] = (1172, 669)
+        self.circle1: Tuple[int, int] = (1470, 718)
+        self.circle2: Tuple[int, int] = (1158, 670)
         self.halfway1: Tuple[int, int] = None
 
         # Real world camera coordinates
@@ -77,11 +77,11 @@ class RealWorldPitchCoords:
         self.box2: Tuple[int, int] = (5, 23)
         self.box3: Tuple[int, int] = (5, 41)
         self.box4: Tuple[int, int] = (0, 41)
-        self.goalPost1:Tuple[int, float] = (0, 29.5)  # They can be floats!
-        self.goalPost2:Tuple[int, float] = (0, 34.5)
-        self.semiCircle1:Tuple[int, int] = (16, 24)
+        self.goalPost1: Tuple[int, float] = (0, 29.5)  # They can be floats!
+        self.goalPost2: Tuple[int, float] = (0, 34.5)
+        self.semiCircle1: Tuple[int, int] = (16, 24)
         self.semiCircle2: Tuple[int, int] = (16, 40)
-        self.boxParallel1:Tuple[int, int] = (16, 0)
+        self.boxParallel1: Tuple[int, int] = (16, 0)
         self.boxParallel2: Tuple[int, int] = None
         self.circle1: Tuple[int, int] = (51, 24)
         self.circle2: Tuple[int, int] = (51, 40)
