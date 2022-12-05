@@ -40,12 +40,12 @@ class CameraJetson3:
         # Note: this definitely is not he cleanest way to do this, but it works for now
         #  What would be better is to have a config file that stores all of this information as a dictionary maybe
         self.corner1: Tuple[int, int] = (1801, 298)
-        self.corner2: Tuple[int, int] = (1800, 827)
+        self.corner2: Tuple[int, int] = (1805, 830)
         self.bixBox1: Tuple[int, int] = None
         self.bixBox2: Tuple[int, int] = (1408, 310)
-        self.bixBox3: Tuple[int, int] =(983, 534)
+        self.bixBox3: Tuple[int, int] = (983, 534)
         self.bigBox4: Tuple[int, int] = (1809, 595)
-        self.box1: Tuple[int, int] = (642, 709)
+        self.box1: Tuple[int, int] = (1804, 362)
         self.box2: Tuple[int, int] = (1655, 355)
         self.box3: Tuple[int, int] = (1598, 456)
         self.box4: Tuple[int, int] = (1809, 471)
@@ -68,7 +68,7 @@ class CameraJetson3:
 class RealWorldPitchCoords:
     def __init__(self):
         self.corner1: Tuple[int, int] = (0, 64)
-        self.corner2: Tuple[int, int] =(0, 0)
+        self.corner2: Tuple[int, int] = (0, 0)
         self.bixBox1: Tuple[int, int] = (0, 54)
         self.bixBox2: Tuple[int, int] = (16, 54)
         self.bixBox3: Tuple[int, int] = (16, 10)
@@ -89,7 +89,7 @@ class RealWorldPitchCoords:
 
 
 def get_coords_as_array():
-    jetson1 = CameraJetson1()
+    jetson1 = CameraJetson3()
     real_world = RealWorldPitchCoords()
 
     # Create an empty np array to store the pixel coordinates
@@ -170,6 +170,13 @@ def compute_homographies():
 
     transformed_point = h2 @ test_point  # This isn't super accurate but we'll use it just to move on for now.
     transformed_point = transformed_point / transformed_point[2]
+    print(transformed_point)
+
+    # Test with h1
+    test_point = np.array([[1062], [817], [1.0]], dtype='float32')
+    transformed_point = h1 @ test_point  # This isn't super accurate but we'll use it just to move on for now.
+    transformed_point = transformed_point / transformed_point[2]
+    print(transformed_point)
 
     assert transformed_point.shape == (3, 1), "The transformed point is not 3x1"
 
