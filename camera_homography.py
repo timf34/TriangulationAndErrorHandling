@@ -88,6 +88,33 @@ class RealWorldPitchCoords:
         self.halfway1: Tuple[int, int] = None
 
 
+def get_coords_as_array():
+    jetson1 = CameraJetson1()
+    real_world = RealWorldPitchCoords()
+
+    # Create an empty np array to store the pixel coordinates
+    j1_arr = np.array([])
+
+    # Get the pixel coordinates from the jetson cameras, and the real world coordinates. Convert to NP.arrays
+    world_points1 = np.array([])
+    for key in jetson1.__dict__.keys():
+        if key in real_world.__dict__.keys() and real_world.__dict__[key] is not None and jetson1.__dict__[
+            key] is not None:
+            j1_arr = np.append(j1_arr, jetson1.__dict__[key],
+                               axis=0)  # TODO: make a python learning script where I add tuples to a numpy array... make sure I can add them as distinct points
+            world_points1 = np.append(world_points1, real_world.__dict__[key])
+
+    j1_arr = j1_arr.reshape(-1, 2)
+    world_points1 = world_points1.reshape(-1, 2)
+
+    assert len(j1_arr) == len(
+        world_points1), f"The number of points in the jetson 1 array and the real world array are not the same: len(" \
+                        f"j1_arr) = {len(j1_arr)}, len(world_points1) = {len(world_points1)} "
+    assert j1_arr.shape[1] == 2, "The jetson 1 array is not 2D"
+
+    return j1_arr, world_points1
+
+
 def compute_homographies():
     jetson1 = CameraJetson1()
     jetson3 = CameraJetson3()
