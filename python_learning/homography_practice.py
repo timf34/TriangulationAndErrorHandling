@@ -4,6 +4,8 @@ import cv2
 
 from camera_homography import get_coords_as_array
 
+np.set_printoptions(suppress=True)
+
 
 class HomographyMethods:
     def __init__(self):
@@ -184,6 +186,9 @@ class HomographyMethods:
         calculate the homography matrix and convert image coordinates to real world coordinates
         """
         image_coords = self.image_coords
+        # Subtract the first element of each element in image_coords from 1920 to get the mirror image x coord
+        image_coords = np.array([[1920 - x, y] for x, y in image_coords])
+
         real_world_coords = self.real_world_coords
 
         # Convert the image coordinates to homogeneous coordinates
@@ -194,7 +199,7 @@ class HomographyMethods:
 
         # Compute the homography matrix using the n corresponding points and the DLT algorithm
         A = []
-        for fp, tp in zip(image_coords, real_world_coords):
+        for fp, tp in zip(image_coords[:], real_world_coords[:]):
             A.append([0, 0, 0, -fp[0], -fp[1], -1, tp[1] * fp[0], tp[1] * fp[1], tp[1]])
             A.append([fp[0], fp[1], 1, 0, 0, 0, -tp[0] * fp[0], -tp[0] * fp[1], -tp[0]])
         A = np.array(A)
@@ -221,9 +226,9 @@ class HomographyMethods:
 
 def main():
     hom = HomographyMethods()
-    hom.h_from_points()
-    hom.gpt_homography()
-    hom.using_four_points()
+    # hom.h_from_points()
+    # hom.gpt_homography()
+    # hom.using_four_points()
     hom.extending_using_four_points()
 
 
