@@ -5,6 +5,8 @@ We will create a function that creates a simple plot given an input... we can th
 something we can take a video of.
 """
 
+# Good source: https://www.geeksforgeeks.org/matplotlib-animation-funcanimation-class-in-python/
+
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
@@ -29,7 +31,7 @@ def update(i):
     This function updates the plot given an input i.
     """
     # Clear the axis
-    ax.clear()
+    # ax.clear()
     # Plot the data
     ax.plot(x, y)
     # Set the title
@@ -47,8 +49,8 @@ fig = create_plot(x, y)
 # Create the axis
 ax = fig.add_subplot(111)
 
-# Create the animation
-ani = FuncAnimation(fig, update, frames=np.arange(0, 10, 0.1), interval=100)
+# matplotlib.animation.FuncAnimation class is used to make animation by repeatedly calling the same function (ie, func).
+ani = FuncAnimation(fig, update, frames=np.arange(0, 10, 0.1), interval=100)  # Frames is passed to the update function
 
 # Save the animation
 ani.save("test.gif")
