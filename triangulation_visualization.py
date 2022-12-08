@@ -49,6 +49,8 @@ class TriangulationVisualization:
         :param y: y coordinate of point
         :return: image with point drawn on it
         """
+        # Clear the image
+        self.pitch_image = np.array(Image.open("images/pitch.jpg"))
         assert 0 <= x <= self.pitch_width and 0 <= y <= self.pitch_height, f"x and y must be between {self.pitch_width} and {self.pitch_height}"
         return cv2.circle(self.pitch_image, (x, y), 15, (255, 0, 0), -1)
 
@@ -98,18 +100,55 @@ class TriangulationVisualization:
         def update_plot(i) -> None:
             # Unpack i
             image_1, image_2, pitch_image = i
-            ax1.plot(image_1)
-            ax2.plot(image_2)
-            ax3.plot(pitch_image)
+            fig.canvas.draw()
+            ax1.imshow(image_1)
+            ax2.imshow(image_2)
+            ax3.imshow(pitch_image)
 
-        # Actually have to preload the frames into a list, as passing a generator to FuncAnimation doesn't work.
-        _frames = []
-        for i in self.get_triangulated_images():
-            _frames.append(i)
+        # Create a cv2 VideoWriter object
+        out = cv2.VideoWriter('test.avi', cv2.VideoWriter_fourcc(*'XVID'), 60, (1280, 2160))
 
-        ani = FuncAnimation(fig, update_plot, frames=_frames)
+        # Loop through self.get_triangulated_images(); update the plot; write the frame to the video
+        for count, i in enumerate(self.get_triangulated_images()):
+            img1, img2, pitch_image = i
+
+            # Convert all images to RGB
+            img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
+            img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
+            pitch_image = cv2.cvtColor(pitch_image, cv2.COLOR_BGR2RGB)
+
+            # Resize images
+            img1 = cv2.resize(img1, (1280, 720))
+            img2 = cv2.resize(img2, (1280, 720))
+            pitch_image = cv2.resize(pitch_image, (1280, 720))
+
+            # Get the image size
+            # height, width, layers = img1.shape
+            # print(height, width, layers)
+
+            # Stack the images together
+            stacked_image = np.vstack((img1, img2))
+            stacked_image = np.vstack((stacked_image, pitch_image))
+            # Show images
+            # cv2.imshow("Stacked image", stacked_image)
+            # cv2.waitKey(0)
+
+            # Write the frame to the video
+            out.write(stacked_image)
+
+            # if count == 3:
+            #     break
+
+        # Release the VideoWriter object
+        out.release()
+
+
+
+
+
+        # ani = FuncAnimation(fig, update_plot, frames=_frames)
         # my_writer = PillowWriter(fps=20, codec='libx264', bitrate=2)
-        ani.save("lets_go.gif", writer='pillow', fps=20, codec='libx264', bitrate=2)
+        # ani.save("lets_go.gif", writer='pillow', fps=20, codec='libx264', bitrate=2)
         # plt.show()
 
     def og_run(self):
