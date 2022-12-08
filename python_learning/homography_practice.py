@@ -289,10 +289,6 @@ def get_new_homographies():
 
 
 
-
-
-
-
 def main():
     hom = HomographyMethods()
     # hom.h_from_points()
