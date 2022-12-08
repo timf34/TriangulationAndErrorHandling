@@ -194,12 +194,12 @@ def compute_homographies():
     h2, status2 = cv2.findHomography(j2_arr, world_points2)
 
     # # Save the homography
-    np.save("h1.npy", h1)
-    np.save("h2.npy", h2)
+    np.save("data/h1.npy", h1)
+    np.save("data/h2.npy", h2)
     #
     # # Load the homography
-    h1 = np.load("h1.npy")
-    h2 = np.load("h2.npy")
+    h1 = np.load("data/h1.npy")
+    h2 = np.load("data/h2.npy")
 
     # Test the homography
     # Fix here: https://answers.opencv.org/question/252/cv2perspectivetransform-with-python/
