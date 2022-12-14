@@ -53,7 +53,7 @@ class MultiCameraTracker:
         self.cameras[str(idx)] = cam
         self.camera_count = len(self.cameras)
 
-    def multi_camera_analysis(self, *detections):
+    def multi_camera_analysis(self, detections: List[Detections]):
         """
             This method receives detections from all the cameras, and performs all the core multi camera analysis.
             It will receive the detections from arrll of the cameras, triangulate if possible, or give a best estimate
