@@ -42,8 +42,10 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
         self.whole_dataset = whole_dataset
         self.dataset_size = dataset_size
         self.cameras: List[str] = [
-            "jetson3_1_4_2022_time__19_45_01_4",
-            "jetson1_date_01_04_2022_time__19_45_01_4",
+            # "jetson3_1_4_2022_time__19_45_01_4",
+            # "jetson1_date_01_04_2022_time__19_45_01_4",
+            "jetson3_1_4_2022_time__20_40_14_25",
+            "jetson1_date_01_04_2022_time__20_40_14_25"
         ]
         self.image_name_length = image_name_length
         self.image_extension: str = image_extension
