@@ -30,7 +30,7 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
                  only_matching_frames: bool = True,
                  small_dataset: bool = False,
                  start_frame: int = 600,
-                 end_frame: int = 1000,
+                 end_frame: int = 700,
                  ):
         """
         Initializes the dataset.
@@ -41,16 +41,17 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
         :param transform: The transform to apply to the dataset.
         """
         print("Whole dataset: ", whole_dataset)
+        assert start_frame < end_frame, "Start frame must be smaller than end frame"
         self.dataset_path: str = r"C:\Users\timf3\OneDrive - Trinity College Dublin\Documents\Documents\datasets\Datasets\Bohs\bohs-preprocessed"
         self.only_ball_frames = only_ball_frames
         self.whole_dataset = whole_dataset
         self.dataset_size = dataset_size
         self.small_dataset = small_dataset
         self.cameras: List[str] = [
-            # "jetson3_1_4_2022_time__19_45_01_4",
-            # "jetson1_date_01_04_2022_time__19_45_01_4",
-            "jetson3_1_4_2022_time__20_40_14_25",
-            "jetson1_date_01_04_2022_time__20_40_14_25"
+            "jetson3_1_4_2022_time__19_45_01_4",
+            "jetson1_date_01_04_2022_time__19_45_01_4",
+            # "jetson3_1_4_2022_time__20_40_14_25",
+            # "jetson1_date_01_04_2022_time__20_40_14_25"
         ]
         self.image_name_length = image_name_length
         self.image_extension: str = image_extension
