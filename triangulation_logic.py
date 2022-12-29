@@ -21,7 +21,7 @@ MAX_DELTA_T = 75
 class MultiCameraTracker:
     def __init__(self):
         self.cameras: Dict[str, Camera] = {}
-        self.camera_count: int = None
+        self.camera_count: int = 0
         self.homographies: Dict = get_new_homographies()  # TODO: this needs refactoring when time to cleanup
         self.three_d_points: List[float] = []
         self.plane: np.array = None
@@ -62,7 +62,7 @@ class MultiCameraTracker:
 
             cam1 = self.cameras[str(cam_list[0])].real_world_camera_coords
             cam2 = self.cameras[str(cam_list[1])].real_world_camera_coords
-            three_d_pos = triangulate(detections[0], cam1, detections[1], cam2)
+            three_d_pos = self.triangulate(detections[0], cam1, detections[1], cam2)
             # this assumes that the detections coming through have the same timestamp
             three_d_pos = ThreeDPoints(x=three_d_pos[0], y=three_d_pos[1], z=three_d_pos[2],
                                        timestamp=detections[0].timestamp)
@@ -229,57 +229,48 @@ class MultiCameraTracker:
             # the ball speed as the ball is more likely to move in a non-straight line (the ball speed wouldn't be
             # accurate).
             return 0
-        if delta_t != 0:
-            speed = distance/delta_t
-            return speed
-        else:
-            # Just a large number/ speed instead of returning false
-            return 99999
+        return distance/delta_t if delta_t != 0 else 99999
 
+    @staticmethod
+    def triangulate(ball_p, cam_p, ball_q, cam_q):
+        """
+        ballP and ballQ are inputs of the ball's coordinates. For now we will assume they have already be mapped to the real
+        world coordinate system through a homography and that they have attributes
+              x, y, z where z=0
+              Note that z actually equals 1!!!
+        although going forward, I should probably build that into this function, including recognising which camera the
+        detections belong to, to apply the correct homography.
+        camP and camQ are the cameras real world positions with attribute x, y and z.
+        This function uses mid-point triangulation ->
+        https://en.wikipedia.org/wiki/Triangulation_(computer_vision)#Mid-point_method
+        """
+        ball_p = np.array([[ball_p.x], [ball_p.y], [ball_p.z]])
+        ball_q = np.array([[ball_q.x], [ball_q.y], [ball_q.z]])
 
-def triangulate(ball_p, cam_p, ball_q, cam_q):
-    """
-    ballP and ballQ are inputs of the ball's coordinates. For now we will assume they have already be mapped to the real
-    world coordinate system through a homography and that they have attributes
-          x, y, z where z=0
-          Note that z actually equals 1!!!
-    although going forward, I should probably build that into this function, including recognising which camera the
-    detections belong to, to apply the correct homography.
-    camP and camQ are the cameras real world positions with attribute x, y and z.
-    This function uses mid-point triangulation ->
-    https://en.wikipedia.org/wiki/Triangulation_(computer_vision)#Mid-point_method
-    """
-    ball_p = np.array([[ball_p.x], [ball_p.y], [ball_p.z]])
-    ball_q = np.array([[ball_q.x], [ball_q.y], [ball_q.z]])
+        l1 = ball_p - cam_p  # direction vectors
+        l2 = ball_q - cam_q
 
-    l1 = ball_p - cam_p  # direction vectors
-    l2 = ball_q - cam_q
+        r1 = np.vdot(l1, l1)  # this is the squared norm/ magnitude of L1
+        r2 = np.vdot(l2, l2)  # same for L2
 
-    r1 = np.vdot(l1, l1)  # this is the squared norm/ magnitude of L1
-    r2 = np.vdot(l2, l2)  # same for L2
+        l1_l2 = np.vdot(l1, l2)  # dot product of L1 and L2
 
-    l1_l2 = np.vdot(l1, l2)  # dot product of L1 and L2
+        balls_l1 = np.vdot((ball_q - ball_p), l1)  # dot product of direction vector between the balls, and L1
+        balls_l2 = np.vdot(l2, (ball_q - ball_p))  # same but for L2
 
-    balls_l1 = np.vdot((ball_q - ball_p), l1)  # dot product of direction vector between the balls, and L1
-    balls_l2 = np.vdot(l2, (ball_q - ball_p))  # same but for L2
+        s = (((l1_l2 * balls_l2) + (balls_l1 * r2)) / ((r1 * r2) + (l1_l2 ** 2)))
+        t = (((l1_l2 * balls_l1) - (balls_l2 * r1)) / ((r1 * r2) + (l1_l2 ** 2)))
 
-    s = (((l1_l2 * balls_l2) + (balls_l1 * r2)) / ((r1 * r2) + (l1_l2 ** 2)))
-    t = (((l1_l2 * balls_l1) - (balls_l2 * r1)) / ((r1 * r2) + (l1_l2 ** 2)))
+        s = abs(s)
+        t = abs(t)
 
-    s = abs(s)
-    t = abs(t)
+        shortest_point1 = ((1 - s) * ball_p) + s * cam_p
+        shortest_point2 = ((1 - t) * ball_q) + t * cam_q
 
-    shortest_point1 = ((1 - s) * ball_p) + s * cam_p
-    shortest_point2 = ((1 - t) * ball_q) + t * cam_q
-
-    midpoint = (shortest_point1 + shortest_point2) / 2  # where midpoint is a 3x1 vector
-
-    return midpoint
+        return (shortest_point1 + shortest_point2) / 2
 
 
 if __name__ == '__main__':
-    # TODO: at this stage, our detections are wrapped in three numpy arrays! Look into getting rid of them!
-
     yolo = MultiCameraTracker()
     # adding cameras to the tracker object
     yolo.add_camera(1, JETSON1_REAL_WORLD)
