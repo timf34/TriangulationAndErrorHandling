@@ -48,8 +48,8 @@ class TriangulationVisualization:
         return cv2.circle(self.pitch_image, (x, y), 15, (255, 0, 0), -1)
 
     @staticmethod
-    def x_y_to_detection(x_1, y_1, i) -> Tuple[Detections, Detections]:
-        d1 = Detections(camera_id=1, probability=0.9, timestamp=i, x=x_1, y=y_1, z=0)
+    def x_y_to_detection(x_1, y_1, i, camera_id: int) -> Tuple[Detections, Detections]:
+        d1 = Detections(camera_id=camera_id, probability=0.9, timestamp=i, x=x_1, y=y_1, z=0)
         return d1
 
     @staticmethod
@@ -71,16 +71,16 @@ class TriangulationVisualization:
             if box_1.size != 0:
                 x_1, y_1 = get_xy_from_box(box_1)
                 image_1 = cv2.putText(image_1, f"x: {x_1}, y: {y_1}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
-                dets.append(self.x_y_to_detection(x_1, y_1, i))
-                cv2.imshow("Image 1", image_1)
+                dets.append(self.x_y_to_detection(x_1, y_1, i, camera_id=3))
+                # cv2.imshow("Image 1", image_1)
 
             if box_2.size != 0:
                 x_3, y_3 = get_xy_from_box(box_2)
                 # note: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
                 x_3 = 1920 - x_3
                 image_2 = cv2.putText(image_2, f"x: {x_3}, y: {y_3}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
-                dets.append(self.x_y_to_detection(x_3, y_3, i))
-                cv2.imshow("Image 2", image_2)
+                dets.append(self.x_y_to_detection(x_3, y_3, i, camera_id=1))
+                # cv2.imshow("Image 2", image_2)
 
             print(len(dets))
 
@@ -93,7 +93,8 @@ class TriangulationVisualization:
             if det is not None:
                 det.x = det.x * (1920 / 102)
                 det.y = det.y * (1218 / 64)
-                pitch_image = self.draw_point(int(det.x), int(det.y))
+                pitch_image = self.draw_point(int(det.y), int(det.x))
+                pitch_image = cv2.putText(pitch_image, f"x: {det.x}, y: {det.y}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
             else:
                 pitch_image = self.draw_point(0, 0)
 
@@ -142,7 +143,7 @@ class TriangulationVisualization:
 
 def main():
     triangulation = TriangulationVisualization()
-    triangulation.run("v3-short-triangulation.avi", show_images=False, stop_early=True)
+    triangulation.run("v3-short22-triangulation.avi", show_images=False, stop_early=True)
 
 
 if __name__ == '__main__':
