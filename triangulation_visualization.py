@@ -25,8 +25,8 @@ def get_xy_from_box(box: List[Tuple[int, int, int, int]]) -> Tuple[int, int]:
 
 
 class TriangulationVisualization:
-    def __init__(self):
-        self.dataset = create_triangulation_dataset(small_dataset=True)
+    def __init__(self, small_dataset=False):
+        self.dataset = create_triangulation_dataset(small_dataset=small_dataset)
         self.pitch_image = np.array(Image.open("images/pitch.jpg"))
         self.pitch_width, self.pitch_height = self.pitch_image.shape[1], self.pitch_image.shape[0]
 
@@ -76,14 +76,15 @@ class TriangulationVisualization:
                 x_1, y_1 = get_xy_from_box(box_1)
                 image_1 = cv2.putText(image_1, f"x: {x_1}, y: {y_1}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
                 image_1 = draw_bboxes_red(image_1, x_1, y_1)
+                x_1 = 1920 - x_1
                 dets.append(self.x_y_to_detection(x_1, y_1, i, camera_id=3))
+
                 # cv2.imshow("Image 1", image_1)
 
             if box_2.size != 0:
                 x_3, y_3 = get_xy_from_box(box_2)
                 # note: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
                 image_2 = draw_bboxes_red(image_2, x_3, y_3)
-                x_3 = 1920 - x_3
                 image_2 = cv2.putText(image_2, f"x: {x_3}, y: {y_3}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
 
                 dets.append(self.x_y_to_detection(x_3, y_3, i, camera_id=1))
@@ -147,8 +148,8 @@ class TriangulationVisualization:
 
 
 def main():
-    triangulation = TriangulationVisualization()
-    triangulation.run("v3-short-temp-triangulation.avi", show_images=False, stop_early=False)
+    triangulation = TriangulationVisualization(stop_early=False)
+    triangulation.run("v3-full-triangulation.avi", show_images=False)
 
 
 if __name__ == '__main__':
