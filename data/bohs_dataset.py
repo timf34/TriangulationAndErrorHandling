@@ -147,7 +147,10 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
         labels = []
         # Add annotations for the ball position: positions of the ball centre
 
-        # TODO: 14/12/22 - NEED TO STEP THROUGH THIS, i NEED TO UPDATE SELF.GT_ANNOTATIONS AS WELL!
+        # Convert image_ndx to int -> 'frame_0000001' -> 1
+        image_ndx = int(image_ndx[-7:])
+
+
         ball_pos = self.gt_annotations[camera_id].ball_pos[int(image_ndx)]
         if ball_pos != [[]]:
             for (x, y) in ball_pos:
