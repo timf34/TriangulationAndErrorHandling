@@ -27,7 +27,10 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
                  dataset_size: int = 1,
                  image_extension: str = '.jpg',
                  image_name_length: int = 7,
-                 only_matching_frames: bool = True
+                 only_matching_frames: bool = True,
+                 small_dataset: bool = False,
+                 start_frame: int = 600,
+                 end_frame: int = 1000,
                  ):
         """
         Initializes the dataset.
@@ -42,6 +45,7 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
         self.only_ball_frames = only_ball_frames
         self.whole_dataset = whole_dataset
         self.dataset_size = dataset_size
+        self.small_dataset = small_dataset
         self.cameras: List[str] = [
             # "jetson3_1_4_2022_time__19_45_01_4",
             # "jetson1_date_01_04_2022_time__19_45_01_4",
@@ -106,6 +110,8 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
         if self.only_matching_frames:
             # self.image_list = self.get_matching_frames()
             self.get_matching_frames()
+            if self.small_dataset:
+                self.image_list = self.image_list[start_frame:end_frame]
 
     def __len__(self):
         return self.n_images
@@ -268,21 +274,28 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
 
 
 def create_triangulation_dataset(
-                        only_ball_frames: bool = False,
-                        dataset_size: int = 2,
-                        image_extension: str = '.jpg',
-                        cameras: List[int] = None,
-                        image_name_length: int = 7):
+        only_ball_frames: bool = False,
+        dataset_size: int = 2,
+        image_extension: str = '.jpg',
+        cameras: List[int] = None,
+        image_name_length: int = 7,
+        small_dataset: bool = False,
+        start_frame: int = 600,
+        end_frame: int = 1000,
+):
 
     if cameras is None:
         cameras = [1]
 
     return TriangulationBohsDataset(
-                       only_ball_frames=only_ball_frames,
-                       dataset_size=dataset_size,
-                       image_extension=image_extension,
-                       image_name_length=image_name_length,
-                       )
+        only_ball_frames=only_ball_frames,
+        dataset_size=dataset_size,
+        image_extension=image_extension,
+        image_name_length=image_name_length,
+        small_dataset=small_dataset,
+        start_frame=start_frame,
+        end_frame=end_frame,
+    )
 
 
 def main():
