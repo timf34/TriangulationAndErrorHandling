@@ -4,8 +4,10 @@ import torch
 
 import numpy as np
 
+from copy import deepcopy
 from PIL import Image
 from typing import List, Tuple, Union
+
 
 from config import TriangulationConfig
 from data.utils import read_bohs_ground_truth
@@ -27,6 +29,7 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
                  dataset_size: int = 1,
                  image_extension: str = '.jpg',
                  image_name_length: int = 7,
+                 only_matching_frames: bool = True
                  ):
         """
         Initializes the dataset.
@@ -50,7 +53,7 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
         self.image_name_length = image_name_length
         self.image_extension: str = image_extension
 
-        self.only_matching_frames: bool = True  # Only show frames where both cameras have a frame with a ball.
+        self.only_matching_frames: bool = only_matching_frames  # Only show frames where both cameras have a frame with a ball.
 
         self.gt_annotations: dict = {}
         self.image_list: list = []
@@ -70,9 +73,14 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
             self.gt_annotations[camera_id] = read_bohs_ground_truth(annotations_path=self.annotations_folder_path,
                                                                     xml_file_name=f'{camera_id}.xml')
 
-            # Create a list with ids of all images with any annotation
             # TODO: also note that we are only using images that include the ball currently
-            annotated_frames = list(set(self.gt_annotations[camera_id].ball_pos))
+            # TODO: I need to adjust this! Make it so we include all frames... or at least, with the only_ball_frames flag, we can choose to only include frames with the ball.
+
+            if self.only_ball_frames:
+                annotated_frames: List[int] = list(set(self.gt_annotations[camera_id].ball_pos))
+            else:
+                annotated_frames: List[int] = list(set(self.gt_annotations[camera_id].ball_pos))
+                annotated_frames = [i for i in range(1, max(annotated_frames) + 1)]
 
             images_path = os.path.join(self.image_folder_path, camera_id)
 
@@ -85,10 +93,6 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
                 else:
                     print("doesn't exist", file_path)
                     print("check whether its frame_000001.png or just 000001.png")
-
-
-        # TODO: I might want to adjust image list to be more of an image_list dict, and then filter that way.
-        #  Try a simpler example of filtering first though. And be sure to only include images that have the ball!
 
 
         self.n_images = len(self.image_list)
@@ -110,20 +114,29 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, ndx):
         # Returns transferred image as a normalized tensor
-        image_path_1, image_path_2, camera_id_1, camera_id_2, image_ndx_1, image_ndx_2 = self.image_list[ndx]  # TODO: Convert self.image_list to contain two paths at once for matching frames.
+        image_path_1, image_path_2, camera_id_1, camera_id_2, image_ndx_1, image_ndx_2 = self.image_list[ndx]
 
         image_1 = Image.open(image_path_1)
         image_2 = Image.open(image_path_2)
 
-        box_1, label_1 = self.get_annotations(camera_id_1, image_ndx_1)
-        box_2, label_2 = self.get_annotations(camera_id_2, image_ndx_2)
+        try:
+            box_1, label_1 = self.get_annotations(camera_id_1, image_ndx_1)
+            box_2, label_2 = self.get_annotations(camera_id_2, image_ndx_2)
+        except:
+            box_1 = [[]]
+            box_2 = [[]]
+            label_1 = []
+            label_2 = []
 
         # Convert PIL image to numpy array
         image_1 = np.array(image_1)
         image_2 = np.array(image_2)
 
-        image_1 = self.draw_bboxes(image_1, box_1)
-        image_2 = self.draw_bboxes(image_2, box_2)
+        # Write an exception to catch if box_1 is [[]]
+        if box_1 != [[]]:
+            image_1 = self.draw_bboxes(image_1, box_1)
+        if box_2 != [[]]:
+            image_2 = self.draw_bboxes(image_2, box_2)
 
         return image_1, image_2, box_1, box_2, label_1, label_2, image_path_1, image_path_2
 
@@ -134,6 +147,7 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
         labels = []
         # Add annotations for the ball position: positions of the ball centre
 
+        # TODO: 14/12/22 - NEED TO STEP THROUGH THIS, i NEED TO UPDATE SELF.GT_ANNOTATIONS AS WELL!
         ball_pos = self.gt_annotations[camera_id].ball_pos[int(image_ndx)]
         if ball_pos != [[]]:
             for (x, y) in ball_pos:
@@ -165,21 +179,58 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
         """
         matching_frames = []
 
-        x = self.gt_annotations[self.cameras[0]].ball_pos
+        if self.only_ball_frames:
 
-        for frame in self.gt_annotations[self.cameras[0]].ball_pos.keys():
-            if frame in self.gt_annotations[self.cameras[1]].ball_pos.keys():
-                if self.gt_annotations[self.cameras[0]].ball_pos[frame] != [[]] and self.gt_annotations[self.cameras[1]].ball_pos[frame] != [[]]:  # If both cameras have the ball
-                    matching_frames.append(frame)
+            x = self.gt_annotations[self.cameras[0]].ball_pos
 
-        image_list: List[str, str, str, str, str, str] = []
+            for frame in self.gt_annotations[self.cameras[0]].ball_pos.keys():
+                if frame in self.gt_annotations[self.cameras[1]].ball_pos.keys():
+                    if self.gt_annotations[self.cameras[0]].ball_pos[frame] != [[]] and self.gt_annotations[self.cameras[1]].ball_pos[frame] != [[]]:  # If both cameras have the ball
+                        matching_frames.append(frame)
 
-        for frame in matching_frames:
+            image_list: List[str, str, str, str, str, str] = []
 
-            frame = str(frame).zfill(self.image_name_length)
-            image_path_1 = os.path.join(self.image_folder_path, self.cameras[0], f'frame_{frame}{self.image_extension}')
-            image_path_2 = os.path.join(self.image_folder_path, self.cameras[1], f'frame_{frame}{self.image_extension}')
-            image_list.append((image_path_1, image_path_2, self.cameras[0], self.cameras[1], frame, frame))
+            for frame in matching_frames:
+
+                frame = str(frame).zfill(self.image_name_length)
+                image_path_1 = os.path.join(self.image_folder_path, self.cameras[0], f'frame_{frame}{self.image_extension}')
+                image_path_2 = os.path.join(self.image_folder_path, self.cameras[1], f'frame_{frame}{self.image_extension}')
+                image_list.append((image_path_1, image_path_2, self.cameras[0], self.cameras[1], frame, frame))
+
+        else:
+            # This is for if we don't have only ball frames. However we still need to ensure that the frames are matching.
+            # And that image_list values have 6 values.
+
+            # Plan: I'll iterate through image list until I find the index of the first frame from the 2nd camera_id
+            i = 0
+            second_camera_index = 0
+            second_camera_id = self.cameras[1]
+            reached_second_camera_id: bool = False
+            while reached_second_camera_id is False:
+                if self.image_list[i][1] == second_camera_id:
+                    reached_second_camera_id = True
+                    second_camera_index = i
+                else:
+                    i += 1
+
+            # No we will will create two image lists for each camera id
+            image_list_1 = deepcopy(self.image_list[:second_camera_index])
+            image_list_2 = deepcopy(self.image_list[second_camera_index:])
+
+            # Now we will iterate through both lists and add the matching frames to the self.image_list
+            # Get the length of the shorter list
+            shorter_list_length = min(len(image_list_1), len(image_list_2))
+
+            image_list = []
+
+            # Note that each image_list has all frames. So we can just iterate through the shorter list. But do note that it doesn't neccessarily start from the start. This is very hacky but will just get it done for now.
+            for i in range(shorter_list_length):
+                image_list.append((image_list_1[i][0], image_list_2[i][0], self.cameras[0], self.cameras[1], f"frame_{image_list_1[i][2]}", f"frame_{image_list_2[i][2]}"))
+
+
+
+            pass
+
 
         # Update all our variables to reflect the new image list
         self.image_list = image_list
@@ -242,7 +293,7 @@ def main():
         print(box_1, box_2)
         print(label_1, label_2)
         print()
-        if i == 10:
+        if i == 50:
             break
 
 
