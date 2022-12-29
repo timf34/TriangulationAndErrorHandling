@@ -1,8 +1,7 @@
 # Import the necessary libraries
 import numpy as np
-import cv2
 
-from camera_homography import get_coords_as_array, get_all_coords_as_arrays
+from utils.camera_homography import get_coords_as_array, get_all_coords_as_arrays
 
 np.set_printoptions(suppress=True)
 
