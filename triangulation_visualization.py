@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from typing import Tuple, List, Generator
 
 from data.bohs_dataset import create_triangulation_dataset
-from data_classes import Detections
+from utils.data_classes import Detections
 from triangulation_logic import MultiCameraTracker
 
 JETSON1_REAL_WORLD = np.array([[-19.41], [-21.85], [7.78]])
@@ -22,7 +22,7 @@ def get_xy_from_box(box: List[Tuple[int, int, int, int]]) -> Tuple[int, int]:
 
 class TriangulationVisualization:
     def __init__(self):
-        self.dataset = create_triangulation_dataset()
+        self.dataset = create_triangulation_dataset(small_dataset=True)
         self.pitch_image = np.array(Image.open("images/pitch.jpg"))
         self.pitch_width, self.pitch_height = self.pitch_image.shape[1], self.pitch_image.shape[0]
 
@@ -58,46 +58,37 @@ class TriangulationVisualization:
                                             gridspec_kw={'hspace': .1})
         return fig, ax1, ax2, ax3
 
-    def get_triangulated_images(self) -> Generator:
+    def get_triangulated_images(self, stop_early) -> Generator:
         tracker = MultiCameraTracker()
         tracker.add_camera(1, JETSON1_REAL_WORLD)
         tracker.add_camera(3, JETSON3_REAL_WORLD)
 
-        for i, (image_1, image_2, box_1, box_2, label_1, label_2, image_path_1, image_path_2) in enumerate(
-                self.dataset):
+        for i, (image_1, image_2, box_1, box_2, label_1, label_2, image_path_1, image_path_2) in enumerate(self.dataset):
 
             det = None
-
-            # Get x and y coordinates of the box
-            if box_1 != [[]]:
-                x_1, y_1 = get_xy_from_box(box_2)
-                image_1 = cv2.putText(image_1, f"x: {x_1}, y: {y_1}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
-
-            if box_2 != [[]]:
-                x_3, y_3 = get_xy_from_box(box_1)
-                # note: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
-                x_3 = 1920 - x_3
-                image_2 = cv2.putText(image_1, f"x: {x_3}, y: {y_3}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
-
-
-
-
             dets = []
 
-            if box_1 != [[]]:
+            if box_1.size != 0:
+                x_1, y_1 = get_xy_from_box(box_1)
+                image_1 = cv2.putText(image_1, f"x: {x_1}, y: {y_1}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
                 dets.append(self.x_y_to_detection(x_1, y_1, i))
-            if box_2 != [[]]:
-                dets.append(self.d_y_to_detection(x_3, y_3, i))
+                cv2.imshow("Image 1", image_1)
+
+            if box_2.size != 0:
+                x_3, y_3 = get_xy_from_box(box_2)
+                # note: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
+                x_3 = 1920 - x_3
+                image_2 = cv2.putText(image_2, f"x: {x_3}, y: {y_3}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+                dets.append(self.x_y_to_detection(x_3, y_3, i))
+                cv2.imshow("Image 2", image_2)
+
+            print(len(dets))
 
             if len(dets) == 0:
                 # det = tracker.multi_camera_analysis(dets)
                 det = None
             else:
-                if len(dets == 1):
-                    det = tracker.multi_camera_analysis(dets[0])
-
-                else:
-                    det = tracker.multi_camera_analysis(dets[0], dets[1])
+                det = tracker.multi_camera_analysis(dets)
 
             if det is not None:
                 det.x = det.x * (1920 / 102)
@@ -108,18 +99,21 @@ class TriangulationVisualization:
 
             # Print a progress message
             if i % 500 == 0:
-                print(f"Processed {i} images")
+                print(f"Processed {i*2} images")
+
+            if stop_early and i == 400:
+                break
 
             yield image_1, image_2, pitch_image
 
-    def run(self, video_name: str, show_images: bool = False) -> None:
+    def run(self, video_name: str, show_images: bool = False, stop_early: bool = False) -> None:
         fig, ax1, ax2, ax3 = self.create_plot()
 
         # Create a cv2 VideoWriter object
         out = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*'XVID'), 60, (1280, 2160))
 
         # Loop through self.get_triangulated_images(); update the plot; write the frame to the video
-        for i in self.get_triangulated_images():
+        for i in self.get_triangulated_images(stop_early=True):
             img1, img2, pitch_image = i
 
             # Convert all images to RGB
@@ -148,7 +142,7 @@ class TriangulationVisualization:
 
 def main():
     triangulation = TriangulationVisualization()
-    triangulation.run("v3-triangulation.avi", show_images=False)
+    triangulation.run("v3-short-triangulation.avi", show_images=False, stop_early=True)
 
 
 if __name__ == '__main__':
