@@ -1,10 +1,7 @@
-import json
-import numpy as np
-
 from collections import namedtuple
-from camera_homography import *
-from data_classes import Camera, Detections, ThreeDPoints
-from typing import Dict, List
+from utils.camera_homography import *
+from utils.data_classes import Camera, Detections, ThreeDPoints
+from typing import Dict, List, Union
 
 from python_learning.homography_practice import get_new_homographies
 
@@ -14,6 +11,7 @@ MAX_SPEED = 40
 # This is a constant for the ball_speed method and is an arbitrary constant that will need to be changed for once we
 # are set up in real life. But for now, 100 will do as we are dealing with a frame rate of 25 FPS
 MAX_DELTA_T = 75
+
 
 # Generally inspired from: https://github.com/HaziqRazali/Soccer-Tracker
 
@@ -231,7 +229,7 @@ class MultiCameraTracker:
             # the ball speed as the ball is more likely to move in a non-straight line (the ball speed wouldn't be
             # accurate).
             return 0
-        return distance/delta_t if delta_t != 0 else 99999
+        return distance / delta_t if delta_t != 0 else 99999
 
     @staticmethod
     def triangulate(ball_p, cam_p, ball_q, cam_q):
@@ -269,7 +267,42 @@ class MultiCameraTracker:
         shortest_point1 = ((1 - s) * ball_p) + s * cam_p
         shortest_point2 = ((1 - t) * ball_q) + t * cam_q
 
-        return (shortest_point1 + shortest_point2) / 2
+        intersection = (shortest_point1 + shortest_point2) / 2
+
+        # Convert ndarray: (3, 1) to list of ints
+        intersection = [int(intersection[0]), int(intersection[1]), int(intersection[2])]
+
+        return intersection
+
+
+def get_test_cases() -> List[Dict[str, Union[List[Detections], str]]]:
+    """
+    This function will return a list of detections that will be used to test the ball tracker
+    :return: List of Detections
+    """
+    cases = [
+        {
+            "detections": [Detections(camera_id=3, probability=0.9, timestamp=9, x=1017, y=298, z=0),
+                           Detections(camera_id=1, probability=0.9, timestamp=9, x=508, y=764, z=0)
+                           ],
+            "expected": "40, 10 ish"
+        },
+        {
+            "detections": [Detections(camera_id=3, probability=0.9, timestamp=9, x=891, y=284, z=0),
+                           Detections(camera_id=1, probability=0.9, timestamp=9, x=274, y=754, z=0)
+                           ],
+            "expected": "50, 10 ish"
+        },
+        {
+            "detections": [Detections(camera_id=3, probability=0.9, timestamp=9, x=488, y=452, z=0),
+                           Detections(camera_id=1, probability=0.9, timestamp=9, x=1153, y=665, z=0)
+                           ],
+            "expected": "25, 50 ish"
+        },
+
+    ]
+
+    return cases
 
 
 if __name__ == '__main__':
@@ -278,21 +311,33 @@ if __name__ == '__main__':
     yolo.add_camera(1, JETSON1_REAL_WORLD)
     yolo.add_camera(3, JETSON3_REAL_WORLD)
 
-    d1 = Detections(camera_id=1, probability=0.9, timestamp=12, x=1062, y=817, z=0)
-    d2 = Detections(camera_id=3, probability=0.9, timestamp=12, x=1408, y=310, z=0)
-    x = yolo.multi_camera_analysis([d1, d2])
-    print("result from 2 detections: ", x)
+    cases = get_test_cases()
 
-    # to form the plane
-    d1 = Detections(camera_id=1, probability=0.9, timestamp=12, x=1062, y=817, z=0)
-    d2 = Detections(camera_id=3, probability=0.9, timestamp=12, x=1408, y=310, z=0)
-    x = yolo.multi_camera_analysis([d1, d2])
+    for case in cases:
+        result = yolo.multi_camera_analysis(case["detections"])
 
-    x = yolo.multi_camera_analysis([d1])
-    print("result from 1 detection: ", x)
+        # Temp code for cleaning up result from array(['40.0']) to 40
+        # result.x = result.x.tolist()[0]
+        # result.y = result.y.tolist()[0]
+        # result.z = result.z.tolist()[0]
 
-    x = yolo.multi_camera_analysis([d2])
-    print("result from 1 detection: ", x)
+        print(f"Expected: {case['expected']}, Result: {result}")
 
-    x = yolo.multi_camera_analysis([])
-    print("result from 0 detections: ", x)
+    # d1 = Detections(camera_id=1, probability=0.9, timestamp=12, x=1062, y=817, z=0)
+    # d2 = Detections(camera_id=3, probability=0.9, timestamp=12, x=1408, y=310, z=0)
+    # x = yolo.multi_camera_analysis([d1, d2])
+    # print("result from 2 detections: ", x)
+    #
+    # # to form the plane
+    # d1 = Detections(camera_id=1, probability=0.9, timestamp=12, x=1062, y=817, z=0)
+    # d2 = Detections(camera_id=3, probability=0.9, timestamp=12, x=1402, y=310, z=0)
+    # x = yolo.multi_camera_analysis([d1, d2])
+    #
+    # x = yolo.multi_camera_analysis([d1])
+    # print("result from 1 detection: ", x)
+    #
+    # x = yolo.multi_camera_analysis([d2])
+    # print("result from 1 detection: ", x)
+    #
+    # x = yolo.multi_camera_analysis([])
+    # print("result from 0 detections: ", x)
