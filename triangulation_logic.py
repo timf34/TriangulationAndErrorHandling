@@ -32,7 +32,7 @@ class MultiCameraTracker:
         self.cameras[str(idx)] = cam
         self.camera_count = len(self.cameras)
 
-    def multi_camera_analysis(self, detections: List[Detections]):
+    def multi_camera_analysis(self, _detections: List[Detections]):
         """
             This method receives detections from all the cameras, and performs all the core multi camera analysis.
             It will receive the detections from arrll of the cameras, triangulate if possible, or give a best estimate
@@ -43,7 +43,7 @@ class MultiCameraTracker:
         """
         # print("detections", detections)
 
-        detections = self.perform_homography(detections)
+        detections = self.perform_homography(_detections)
 
         # Prepare for Triangulation
         # Create a list with the different camera ids
@@ -229,7 +229,7 @@ class MultiCameraTracker:
             # the ball speed as the ball is more likely to move in a non-straight line (the ball speed wouldn't be
             # accurate).
             return 0
-        return distance / delta_t if delta_t != 0 else 99999
+        return distance / delta_t if delta_t != 0 else 99999  # Speed
 
     @staticmethod
     def triangulate(ball_p, cam_p, ball_q, cam_q):
@@ -267,10 +267,10 @@ class MultiCameraTracker:
         shortest_point1 = ((1 - s) * ball_p) + s * cam_p
         shortest_point2 = ((1 - t) * ball_q) + t * cam_q
 
-        intersection = (shortest_point1 + shortest_point2) / 2
+        midpoint = (shortest_point1 + shortest_point2) / 2
 
         # Convert ndarray: (3, 1) to list of ints
-        intersection = [int(intersection[0]), int(intersection[1]), int(intersection[2])]
+        intersection = [int(midpoint[0]), int(midpoint[1]), int(midpoint[2])]
 
         return intersection
 

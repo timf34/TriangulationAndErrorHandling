@@ -82,8 +82,6 @@ class TriangulationVisualization:
                 dets.append(self.x_y_to_detection(x_3, y_3, i, camera_id=1))
                 # cv2.imshow("Image 2", image_2)
 
-            print(len(dets))
-
             if len(dets) == 0:
                 # det = tracker.multi_camera_analysis(dets)
                 det = None
@@ -93,7 +91,7 @@ class TriangulationVisualization:
             if det is not None:
                 det.x = det.x * (1920 / 102)
                 det.y = det.y * (1218 / 64)
-                pitch_image = self.draw_point(int(det.y), int(det.x))
+                pitch_image = self.draw_point(int(det.x), int(det.y))
                 pitch_image = cv2.putText(pitch_image, f"x: {det.x}, y: {det.y}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
             else:
                 pitch_image = self.draw_point(0, 0)
@@ -114,7 +112,7 @@ class TriangulationVisualization:
         out = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*'XVID'), 60, (1280, 2160))
 
         # Loop through self.get_triangulated_images(); update the plot; write the frame to the video
-        for i in self.get_triangulated_images(stop_early=True):
+        for i in self.get_triangulated_images(stop_early=stop_early):
             img1, img2, pitch_image = i
 
             # Convert all images to RGB
@@ -143,7 +141,7 @@ class TriangulationVisualization:
 
 def main():
     triangulation = TriangulationVisualization()
-    triangulation.run("v3-short22-triangulation.avi", show_images=False, stop_early=True)
+    triangulation.run("v3-short-temp-triangulation.avi", show_images=False, stop_early=False)
 
 
 if __name__ == '__main__':
