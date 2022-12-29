@@ -1,8 +1,10 @@
 import json
+import numpy as np
+
 from collections import namedtuple
 from camera_homography import *
-from data_classes import *
-import numpy as np
+from data_classes import Camera, Detections, ThreeDPoints
+from typing import Dict, List
 
 from python_learning.homography_practice import get_new_homographies
 
@@ -23,29 +25,13 @@ MAX_DELTA_T = 75
 
 class MultiCameraTracker:
     def __init__(self):
-        # This is a dict for all the camera objects, where the key is the camera id... and yes, the id will be stored
-        # twice. Once as a kay, and a again as the first value in the tuple.
-        self.cameras = {}
-        # This counts the number of camera objects and is updated every time a camera is added
-        self.camera_count = None
-        # This is a 2nd/ newest homography attribute, which works with the fact that we are going to be adding our
-        # cameras to this class using the .add_camera method now instead. And also that we will be storing the
-        # information for the homography matrices in the camera constants file.
-        self.homographies = get_new_homographies()
-        # Just a list of all the 3d points detected... primarily for when theres one detection &/ more error handling
-        self.three_d_points = []
-        # This is for the height estimation when theres just one detection
-        self.plane = None
-        # This is just a tuple with the dimensions of the field model in metres (ie (68, 105))
+        self.cameras: Dict[str, Camera] = {}
+        self.camera_count: int = None
+        self.homographies: Dict = get_new_homographies()  # TODO: this needs refactoring when time to cleanup
+        self.three_d_points: List[float] = []
+        self.plane: np.array = None
         FieldDimensions = namedtuple('FieldDimensions', 'width length')
-        self.field_model = FieldDimensions(68, 105)
-        # Path to the json file for working with while developing
-        # self.gt_path = gt_path
-        # with open(self.gt_path) as file:
-        #     ball_data = json.load(file)
-        # Ball data: dict of lists with key value pairs {'camera_id': [(frame, x, y),...]}
-        # assert isinstance(ball_data, object)
-        # self.ball_data = ball_data
+        self.field_model: Tuple = FieldDimensions(68, 105)
 
     def add_camera(self, idx, real_world_camera_coords):
         # self.homographies[str(idx)] = homography_idx(str(idx))
