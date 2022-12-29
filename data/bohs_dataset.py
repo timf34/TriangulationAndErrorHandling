@@ -22,6 +22,8 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
     """
 
     def __init__(self,
+                 start_frame: int,
+                 end_frame: int,
                  only_ball_frames: bool = False,
                  whole_dataset: bool = True,
                  dataset_size: int = 1,
@@ -29,8 +31,7 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
                  image_name_length: int = 7,
                  only_matching_frames: bool = True,
                  small_dataset: bool = False,
-                 start_frame: int = 600,
-                 end_frame: int = 700,
+
                  ):
         """
         Initializes the dataset.
@@ -281,8 +282,8 @@ def create_triangulation_dataset(
         cameras: List[int] = None,
         image_name_length: int = 7,
         small_dataset: bool = False,
-        start_frame: int = 600,
-        end_frame: int = 1000,
+        start_frame: int = 657,
+        end_frame: int = 800,
 ):
 
     if cameras is None:
