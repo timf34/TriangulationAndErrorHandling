@@ -6,10 +6,8 @@ import numpy as np
 
 from copy import deepcopy
 from PIL import Image
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
-
-from config import TriangulationConfig
 from data.utils import read_bohs_ground_truth
 
 BALL_BBOX_SIZE = 20
