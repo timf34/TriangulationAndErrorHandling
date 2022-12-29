@@ -1,3 +1,4 @@
+import copy
 from collections import namedtuple
 from utils.camera_homography import *
 from utils.data_classes import Camera, Detections, ThreeDPoints
@@ -43,7 +44,7 @@ class MultiCameraTracker:
         """
         # print("detections", detections)
 
-        detections = self.perform_homography(_detections)
+        detections = self.perform_homography(copy.deepcopy(_detections))
 
         # Prepare for Triangulation
         # Create a list with the different camera ids

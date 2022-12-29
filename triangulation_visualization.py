@@ -13,6 +13,10 @@ JETSON1_REAL_WORLD = np.array([[-19.41], [-21.85], [7.78]])
 JETSON3_REAL_WORLD = np.array([[0.], [86.16], [7.85]])
 
 
+def draw_bboxes_red(image, x, y):
+    return cv2.circle(image, (int(x), int(y)), 5, (255, 0, 0), 2)
+
+
 def get_xy_from_box(box: List[Tuple[int, int, int, int]]) -> Tuple[int, int]:
     box = box[0]
     x = (box[0] + box[2]) / 2
@@ -71,14 +75,17 @@ class TriangulationVisualization:
             if box_1.size != 0:
                 x_1, y_1 = get_xy_from_box(box_1)
                 image_1 = cv2.putText(image_1, f"x: {x_1}, y: {y_1}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+                image_1 = draw_bboxes_red(image_1, x_1, y_1)
                 dets.append(self.x_y_to_detection(x_1, y_1, i, camera_id=3))
                 # cv2.imshow("Image 1", image_1)
 
             if box_2.size != 0:
                 x_3, y_3 = get_xy_from_box(box_2)
                 # note: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
+                image_2 = draw_bboxes_red(image_2, x_3, y_3)
                 x_3 = 1920 - x_3
                 image_2 = cv2.putText(image_2, f"x: {x_3}, y: {y_3}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+
                 dets.append(self.x_y_to_detection(x_3, y_3, i, camera_id=1))
                 # cv2.imshow("Image 2", image_2)
 
