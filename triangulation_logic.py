@@ -139,10 +139,10 @@ class MultiCameraTracker:
 
         # Normal vector of ab which is lying on the ground plane (a, b, 0)
         # However one thing to note is that I'm not sure if my homography is in the 'ground plane' or 1 metre above it
-        normal = np.array([-ab[1], ab[0], 0])
+        normal = np.array([-ab[1], ab[0], 0], dtype=object)
 
         # Equation of the plane, ax + by + cz + constant = 0... and where the plane is vertical so z is always zero
-        plane = np.array([normal[0], normal[1], 0, -(a[0] * normal[0] + a[1] * normal[1])])
+        plane = np.array([normal[0], normal[1], 0, -(a[0] * normal[0] + a[1] * normal[1])], dtype=object)
 
         self.plane = plane
 
@@ -154,7 +154,7 @@ class MultiCameraTracker:
         for i in detections:
             _id = i.camera_id
             c = self.cameras[str(_id)].real_world_camera_coords
-            ball_coords = np.array([[i.x], [i.y], [i.z]])
+            ball_coords = np.array([[i.x], [i.y], [i.z]], dtype=object)
 
             # projection of the camera onto xy plane, point d
             d = c
@@ -163,14 +163,16 @@ class MultiCameraTracker:
             # Vector from projected camera to the ball, vector DA
             da = ball_coords - c
 
-            # Parametric equation of line da
-            # xyz = aT + camera_constants
-            # I can probably make a numpy array out of this, or just make a cleaner comprehension... using zip() perhaps
-            # line_da = [[da[0], c[0]], [da[1], c[1]], [da[2], c[2]]]
-
             # TODO: check the shape of the plane
-            t = (-self.plane[3] - c[0] * self.plane[0] - c[1] * self.plane[1]) / \
-                (da[0] * self.plane[0] + da[1] * self.plane[1])
+
+            try:
+                t = (-self.plane[3] - c[0] * self.plane[0] - c[1] * self.plane[1]) / \
+                    (da[0] * self.plane[0] + da[1] * self.plane[1])
+            except ZeroDivisionError:
+                print("division by zero")
+                t = 0
+                # TODO: need to check if this is the best way to handle this, or if we even should be getting a
+                #  ZeroDivisionError here (when the ball stays in the same position)
 
             # Point of intersection
             intersection = [(da[0] * t + c[0]), (da[1] * t + c[1]), (da[1] * t + c[1])]
@@ -276,11 +278,15 @@ if __name__ == '__main__':
     yolo.add_camera(1, JETSON1_REAL_WORLD)
     yolo.add_camera(3, JETSON3_REAL_WORLD)
 
-
     d1 = Detections(camera_id=1, probability=0.9, timestamp=12, x=1062, y=817, z=0)
     d2 = Detections(camera_id=3, probability=0.9, timestamp=12, x=1408, y=310, z=0)
     x = yolo.multi_camera_analysis([d1, d2])
     print("result from 2 detections: ", x)
+
+    # to form the plane
+    d1 = Detections(camera_id=1, probability=0.9, timestamp=12, x=1062, y=817, z=0)
+    d2 = Detections(camera_id=3, probability=0.9, timestamp=12, x=1408, y=310, z=0)
+    x = yolo.multi_camera_analysis([d1, d2])
 
     x = yolo.multi_camera_analysis([d1])
     print("result from 1 detection: ", x)
