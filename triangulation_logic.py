@@ -112,7 +112,7 @@ class MultiCameraTracker:
         dets_ = []
 
         for det in detections:
-            temp = self.homographies[str(det.camera_id)] @ np.array([[det.x], [det.y], [1.0]])
+            temp = self.homographies[str(det.camera_id)] @ np.array([[det.x], [det.y], [1.0]], dtype=object)
             temp = temp / temp[2]
             det.x, det.y = temp[0], temp[1]
             dets_.append(det)
@@ -213,7 +213,7 @@ class MultiCameraTracker:
         # Also note that this method can only be called when the ball has relatively successive detections so the ball
         # doesn't curve around a good bit (the ball is in a relatively straight line)
 
-        if len(self.three_d_points) is not 0:
+        if len(self.three_d_points) != 0:
             last_det = self.three_d_points[-1]
         else:
             return 0
@@ -244,8 +244,8 @@ class MultiCameraTracker:
         This function uses mid-point triangulation ->
         https://en.wikipedia.org/wiki/Triangulation_(computer_vision)#Mid-point_method
         """
-        ball_p = np.array([[ball_p.x], [ball_p.y], [ball_p.z]])
-        ball_q = np.array([[ball_q.x], [ball_q.y], [ball_q.z]])
+        ball_p = np.array([[ball_p.x], [ball_p.y], [ball_p.z]], dtype=object)
+        ball_q = np.array([[ball_q.x], [ball_q.y], [ball_q.z]], dtype=object)
 
         l1 = ball_p - cam_p  # direction vectors
         l2 = ball_q - cam_q
@@ -276,9 +276,17 @@ if __name__ == '__main__':
     yolo.add_camera(1, JETSON1_REAL_WORLD)
     yolo.add_camera(3, JETSON3_REAL_WORLD)
 
+
     d1 = Detections(camera_id=1, probability=0.9, timestamp=12, x=1062, y=817, z=0)
     d2 = Detections(camera_id=3, probability=0.9, timestamp=12, x=1408, y=310, z=0)
+    x = yolo.multi_camera_analysis([d1, d2])
+    print("result from 2 detections: ", x)
 
-    x = yolo.multi_camera_analysis(d1, d2)
+    x = yolo.multi_camera_analysis([d1])
+    print("result from 1 detection: ", x)
 
-    print("resulting coordinates 1: ", x)
+    x = yolo.multi_camera_analysis([d2])
+    print("result from 1 detection: ", x)
+
+    x = yolo.multi_camera_analysis([])
+    print("result from 0 detections: ", x)
