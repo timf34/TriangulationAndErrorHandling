@@ -8,11 +8,6 @@ from typing import Dict, List
 
 from python_learning.homography_practice import get_new_homographies
 
-GT_PATH = r'C:\Users\timf3\PycharmProjects\task2_3\gt_val_detections.json'
-PITCH_JPG = r'C:\Users\timf3\Pictures\fieldmodel.jpg'
-RED = (255, 0, 0)
-RADIUS = 1
-THICKNESS = 1
 JETSON1_REAL_WORLD = np.array([[-19.41], [-21.85], [7.78]])
 JETSON3_REAL_WORLD = np.array([[0.], [86.16], [7.85]])
 MAX_SPEED = 40
