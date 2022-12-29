@@ -13,6 +13,8 @@ MAX_SPEED = 40
 # are set up in real life. But for now, 100 will do as we are dealing with a frame rate of 25 FPS
 MAX_DELTA_T = 75
 
+THREE_D_POINTS_FLAG: List[float] = [999., 999., 999.]  # Flag used for when we have no detections
+
 
 # Generally inspired from: https://github.com/HaziqRazali/Soccer-Tracker
 
@@ -68,10 +70,12 @@ class MultiCameraTracker:
 
             if (self.field_model.width > three_d_pos.x > 0) and (self.field_model.length > three_d_pos.y > 0):
                 if self.common_sense(three_d_pos):
-                    self.three_d_points.append(three_d_pos)
+                    self.three_d_points.append(copy.deepcopy(three_d_pos))
                 else:
+                    self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
                     three_d_pos = None
             else:
+                self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
                 three_d_pos = None
                 print("!!!the detected ball is out of range!!!")
 
@@ -89,11 +93,14 @@ class MultiCameraTracker:
                 if (self.field_model.width > three_d_estimation.x > 0) and \
                         (self.field_model.length > three_d_estimation.y > 0):
                     if self.common_sense(three_d_pos):
-                        self.three_d_points.append(three_d_estimation)
+                        self.three_d_points.append(copy.deepcopy(three_d_estimation))
                         three_d_pos = three_d_estimation
                     else:
+                        self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
                         three_d_pos = None
                 else:
+                    self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
+                    three_d_pos = None
                     print("!!!the detected ball is out of range!!!")
 
         return three_d_pos
@@ -124,11 +131,25 @@ class MultiCameraTracker:
             detection of the ball.
         """
 
+        # TODO: do note that we delete the plane once we have two detections (I think I had a point but have forgot)
+
         try:
-            temp1 = self.three_d_points[-1]
+            # Instead of relying on the ball being out of frame for 1 frame, we'll make it 10.
+            last_10_points = self.three_d_points[-10:]
+            try:
+                last_2_points = [p for p in last_10_points if p != THREE_D_POINTS_FLAG][-2:]
+            except IndexError:
+                print("Not enough points to create a plane!")
+                return None
+
+
+            temp1 = last_2_points[-1]
             # this is probably not 'good code' but it works, we need to subtract two vectors
+
+            # TODO: there is problems with the math here - step through this using the debugger. When I use metres, its just far too close an approximation and we end up with 0.
+
             a = np.array([[temp1.x], [temp1.y], [temp1.z]])
-            temp2 = self.three_d_points[-2]
+            temp2 = last_2_points[-2]
             b = np.array([[temp2.x], [temp2.y], [temp2.z]])
         except IndexError:
             print("theres no last points to form the plane")
@@ -160,15 +181,15 @@ class MultiCameraTracker:
             d[-1] = 0
 
             # Vector from projected camera to the ball, vector DA
+            # This is coming out wrong!
             da = ball_coords - c
-
-            # TODO: check the shape of the plane
 
             try:
                 t = (-self.plane[3] - c[0] * self.plane[0] - c[1] * self.plane[1]) / \
                     (da[0] * self.plane[0] + da[1] * self.plane[1])
-            except ZeroDivisionError:
-                print("division by zero")
+            except IndexError:  # TODO: also need to catch division by zero error
+                # Print the error and return the last known position
+                print("Error in internal height estimation")
                 t = 0
                 # TODO: need to check if this is the best way to handle this, or if we even should be getting a
                 #  ZeroDivisionError here (when the ball stays in the same position)
