@@ -111,11 +111,12 @@ class TriangulationVisualization:
 
             yield image_3, image_1, pitch_image
 
-    def run(self, video_name: str, show_images: bool = False) -> None:
+    def run(self, video_name: str, show_images: bool = False, save_video: bool = True) -> None:
         fig, ax1, ax2, ax3 = self.create_plot()
 
         # Create a cv2 VideoWriter object
-        out = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*'XVID'), 60, (1280, 2160))
+        if save_video:
+            out = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*'XVID'), 60, (1280, 2160))
 
         # Loop through self.get_triangulated_images(); update the plot; write the frame to the video
         for i in self.get_triangulated_images():
@@ -138,16 +139,17 @@ class TriangulationVisualization:
             if show_images:
                 cv2.imshow("Stacked image", stacked_image)
                 cv2.waitKey(0)
-
-            out.write(stacked_image)
+            if save_video:
+                out.write(stacked_image)
 
         # Release the VideoWriter object
-        out.release()
+        if save_video:
+            out.release()
 
 
 def main():
     triangulation = TriangulationVisualization(small_dataset=False)
-    triangulation.run("v3-full-triangulation.avi", show_images=False)
+    triangulation.run("v3-full-triangulation.avi", show_images=False, save_video=False)
 
 
 if __name__ == '__main__':
