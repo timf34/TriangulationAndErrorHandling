@@ -48,10 +48,9 @@ class TriangulationVisualization:
         return cv2.circle(self.pitch_image, (x, y), 15, (255, 0, 0), -1)
 
     @staticmethod
-    def x_y_to_detection(x_1, y_1, x_3, y_3, i) -> Tuple[Detections, Detections]:
+    def x_y_to_detection(x_1, y_1, i) -> Tuple[Detections, Detections]:
         d1 = Detections(camera_id=1, probability=0.9, timestamp=i, x=x_1, y=y_1, z=0)
-        d2 = Detections(camera_id=3, probability=0.9, timestamp=i, x=x_3, y=y_3, z=0)
-        return d1, d2
+        return d1
 
     @staticmethod
     def create_plot():
@@ -67,15 +66,38 @@ class TriangulationVisualization:
         for i, (image_1, image_2, box_1, box_2, label_1, label_2, image_path_1, image_path_2) in enumerate(
                 self.dataset):
 
+            det = None
+
             # Get x and y coordinates of the box
-            x_1, y_1 = get_xy_from_box(box_2)
-            x_3, y_3 = get_xy_from_box(box_1)
+            if box_1 != [[]]:
+                x_1, y_1 = get_xy_from_box(box_2)
+                image_1 = cv2.putText(image_1, f"x: {x_1}, y: {y_1}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
-            # note: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
-            x_3 = 1920 - x_3
+            if box_2 != [[]]:
+                x_3, y_3 = get_xy_from_box(box_1)
+                # note: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
+                x_3 = 1920 - x_3
+                image_2 = cv2.putText(image_1, f"x: {x_3}, y: {y_3}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
-            d1, d2 = self.x_y_to_detection(x_1, y_1, x_3, y_3, i)
-            det = tracker.multi_camera_analysis(d1, d2)
+
+
+
+            dets = []
+
+            if box_1 != [[]]:
+                dets.append(self.x_y_to_detection(x_1, y_1, i))
+            if box_2 != [[]]:
+                dets.append(self.d_y_to_detection(x_3, y_3, i))
+
+            if len(dets) == 0:
+                # det = tracker.multi_camera_analysis(dets)
+                det = None
+            else:
+                if len(dets == 1):
+                    det = tracker.multi_camera_analysis(dets[0])
+
+                else:
+                    det = tracker.multi_camera_analysis(dets[0], dets[1])
 
             if det is not None:
                 det.x = det.x * (1920 / 102)
@@ -83,6 +105,10 @@ class TriangulationVisualization:
                 pitch_image = self.draw_point(int(det.x), int(det.y))
             else:
                 pitch_image = self.draw_point(0, 0)
+
+            # Print a progress message
+            if i % 500 == 0:
+                print(f"Processed {i} images")
 
             yield image_1, image_2, pitch_image
 
@@ -122,7 +148,7 @@ class TriangulationVisualization:
 
 def main():
     triangulation = TriangulationVisualization()
-    triangulation.run("v1-triangulation.avi", show_images=False)
+    triangulation.run("v3-triangulation.avi", show_images=False)
 
 
 if __name__ == '__main__':
