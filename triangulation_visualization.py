@@ -8,6 +8,7 @@ from typing import Tuple, List, Generator
 
 from data.bohs_dataset import create_triangulation_dataset
 from utils.data_classes import Detections
+from utils.timer import Timer
 from triangulation_logic import MultiCameraTracker
 
 JETSON1_REAL_WORLD = np.array([[-19.41], [-21.85], [7.78]])
@@ -31,6 +32,7 @@ class TriangulationVisualization:
         self.pitch_image: np.array = np.array(Image.open("images/pitch.jpg"))
         self.pitch_width: int = self.pitch_image.shape[1]
         self.pitch_height: int = self.pitch_image.shape[0]
+        self.timer: Timer = Timer()
 
     @staticmethod
     def plot_images(image_1, image_2, image_3):
@@ -91,7 +93,6 @@ class TriangulationVisualization:
         tracker.add_camera(1, JETSON1_REAL_WORLD)
         tracker.add_camera(3, JETSON3_REAL_WORLD)
 
-        # Where the number is the camera id
         for i, (image_3, image_1, box_3, box_1, label_3, label_1, image_path_3, image_path_1) in enumerate(self.dataset):
 
             self.pitch_image = np.array(Image.open("images/pitch.jpg"))  # Clear the image
@@ -143,6 +144,8 @@ class TriangulationVisualization:
         if save_video:
             out = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*'XVID'), 60, (1280, 2160))
 
+        self.timer.start()
+
         # Loop through self.get_triangulated_images(); update the plot; write the frame to the video
         for i in self.get_triangulated_images():
             img1, img2, pitch_image = i
@@ -166,6 +169,9 @@ class TriangulationVisualization:
                 cv2.waitKey(0)
             if save_video:
                 out.write(stacked_image)
+
+        self.timer.stop()
+        print(f"Time taken: {self.timer.get_elapsed_time()}")
 
         # Release the VideoWriter object
         if save_video:
