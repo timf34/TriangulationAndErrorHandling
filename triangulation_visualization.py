@@ -1,4 +1,5 @@
 import cv2
+from copy import deepcopy
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,7 +18,7 @@ def draw_bboxes_red(image, x, y):
     return cv2.circle(image, (int(x), int(y)), 5, (255, 0, 0), 2)
 
 
-def get_xy_from_box(box: List[Tuple[int, int, int, int]]) -> Tuple[int, int]:
+def get_xy_from_box(box: List[Tuple[int, int, int, int]]) -> Tuple[float, float]:
     box = box[0]
     x = (box[0] + box[2]) / 2
     y = (box[1] + box[3]) / 2
@@ -27,8 +28,9 @@ def get_xy_from_box(box: List[Tuple[int, int, int, int]]) -> Tuple[int, int]:
 class TriangulationVisualization:
     def __init__(self, small_dataset=False):
         self.dataset = create_triangulation_dataset(small_dataset=small_dataset)
-        self.pitch_image = np.array(Image.open("images/pitch.jpg"))
-        self.pitch_width, self.pitch_height = self.pitch_image.shape[1], self.pitch_image.shape[0]
+        self.pitch_image: np.array = np.array(Image.open("images/pitch.jpg"))
+        self.pitch_width: int = self.pitch_image.shape[1]
+        self.pitch_height: int = self.pitch_image.shape[0]
 
     @staticmethod
     def plot_images(image_1, image_2, image_3):
@@ -39,22 +41,45 @@ class TriangulationVisualization:
         ax3.imshow(image_3)
         plt.show(block=False)
 
-    def draw_point(self, x, y):
+    @staticmethod
+    def convert_det_to_pixels(det: Detections) -> Tuple[float, float]:
+        x = det.x * (1920 / 102)
+        y = det.y * (1218 / 64)
+        return x, y
+
+    def visualize_individual_cam_homography(self, tracker: MultiCameraTracker, single_cam_det: Detections, camera_id: int) -> None:
+        cam_hom = tracker.perform_homography([deepcopy(single_cam_det)])[0]
+        cam_hom.x, cam_hom.y = self.convert_det_to_pixels(cam_hom)
+        self.pitch_image = self.draw_point(int(cam_hom.x), int(cam_hom.y), camera_id=camera_id)
+
+
+    def draw_point(self, x, y, camera_id: int = None):
         """
-        This function allows us to draw a point on self.pitch_image
+        This function allows us to draw a point on self.pitch_image. Note we have to call cv2.circle before cv2.putText
+        because cv2.putText draws on top of the image.
+        :param camera_id:
         :param x: x coordinate of point
         :param y: y coordinate of point
         :return: image with point drawn on it
         """
-        self.pitch_image = np.array(Image.open("images/pitch.jpg"))  # Clear the image
         assert 0 <= x <= self.pitch_width and 0 <= y <= self.pitch_height, f"x and y must be between " \
-                                                                           f"{self.pitch_width} and {self.pitch_height}"
-        return cv2.circle(self.pitch_image, (x, y), 15, (255, 0, 0), -1)
+                                                                               f"{self.pitch_width} and {self.pitch_height}"
+        if camera_id == 1:
+            color = (0, 255, 0)
+            # Put a 1 inside the circle
+            cv2.circle(self.pitch_image, (x, y), 20, color, -3)
+            return cv2.putText(self.pitch_image, "1", (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+        elif camera_id == 3:
+            color = (0, 0, 255)
+            cv2.circle(self.pitch_image, (x, y), 20, color, -3)
+            return cv2.putText(self.pitch_image, "3", (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        else:
+            color = (255, 0, 0)
+            return cv2.circle(self.pitch_image, (x, y), 15, color, -3)
 
     @staticmethod
-    def x_y_to_detection(x_1, y_1, i, camera_id: int) -> Tuple[Detections, Detections]:
-        d1 = Detections(camera_id=camera_id, probability=0.9, timestamp=i, x=x_1, y=y_1, z=0)
-        return d1
+    def x_y_to_detection(x_1, y_1, i, camera_id: int) -> Detections:
+        return Detections(camera_id=camera_id, probability=0.9, timestamp=i, x=x_1, y=y_1, z=0)
 
     @staticmethod
     def create_plot():
@@ -70,46 +95,47 @@ class TriangulationVisualization:
         # Where the number is the camera id
         for i, (image_3, image_1, box_3, box_1, label_3, label_1, image_path_3, image_path_1) in enumerate(self.dataset):
 
-            det = None
+            self.pitch_image = np.array(Image.open("images/pitch.jpg"))  # Clear the image
+
             dets = []
 
             if box_3.size != 0:
                 x_3, y_3 = get_xy_from_box(box_3)
                 image_3 = cv2.putText(image_3, f"x: {x_3}, y: {y_3}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
                 image_3 = draw_bboxes_red(image_3, x_3, y_3)
+                # note: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
                 x_3 = 1920 - x_3
-                dets.append(self.x_y_to_detection(x_3, y_3, i, camera_id=3))
+                cam_3_det = self.x_y_to_detection(x_3, y_3, i, camera_id=3)
+                dets.append(cam_3_det)
 
-                # cv2.imshow("Image 1", image_1)
+                # Perform homography for visualizing individual camera detections
+                self.visualize_individual_cam_homography(tracker, cam_3_det, camera_id=3)
 
             if box_1.size != 0:
                 x_1, y_1 = get_xy_from_box(box_1)
-                # note: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
                 image_1 = draw_bboxes_red(image_1, x_1, y_1)
                 image_1 = cv2.putText(image_1, f"x: {x_1}, y: {y_1}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
 
-                dets.append(self.x_y_to_detection(x_1, y_1, i, camera_id=1))
-                # cv2.imshow("Image 2", image_2)
+                # Get detection
+                cam_1_det = self.x_y_to_detection(x_1, y_1, i, camera_id=1)
+                dets.append(cam_1_det)
 
-            if len(dets) == 0:
-                # det = tracker.multi_camera_analysis(dets)
-                det = None
-            else:
-                det = tracker.multi_camera_analysis(dets)
+                # Perform homography for visualizing individual camera detections
+                self.visualize_individual_cam_homography(tracker, cam_1_det, camera_id=1)
 
+            det = tracker.multi_camera_analysis(dets) if dets else None
             if det is not None:
-                det.x = det.x * (1920 / 102)
-                det.y = det.y * (1218 / 64)
-                pitch_image = self.draw_point(int(det.x), int(det.y))
-                pitch_image = cv2.putText(pitch_image, f"x: {det.x}, y: {det.y}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+                det.x, det.y = self.convert_det_to_pixels(det)
+                self.pitch_image = self.draw_point(int(det.x), int(det.y))
+                self.pitch_image = cv2.putText(self.pitch_image, f"x: {det.x}, y: {det.y}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
             else:
-                pitch_image = self.draw_point(0, 0)
+                self.pitch_image = self.draw_point(0, 0)
 
             # Print a progress message
             if i % 500 == 0:
                 print(f"Processed {i*2} images")
 
-            yield image_3, image_1, pitch_image
+            yield image_3, image_1, self.pitch_image
 
     def run(self, video_name: str, show_images: bool = False, save_video: bool = True) -> None:
         fig, ax1, ax2, ax3 = self.create_plot()
@@ -148,8 +174,8 @@ class TriangulationVisualization:
 
 
 def main():
-    triangulation = TriangulationVisualization(small_dataset=False)
-    triangulation.run("v3-full-triangulation.avi", show_images=False, save_video=False)
+    triangulation = TriangulationVisualization(small_dataset=True)
+    triangulation.run("v3-full2-with-1-dets-triangulation.avi", show_images=False, save_video=True)
 
 
 if __name__ == '__main__':
