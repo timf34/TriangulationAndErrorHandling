@@ -8,10 +8,10 @@ class Detections:
     camera_id: int
     probability: float
     timestamp: float
-    x: int = 0
-    y: int = 0
+    x: float = 0
+    y: float = 0
     # z is set to 1 to work with homography for now
-    z: int = 1
+    z: float = 1
     x_hom: float = 0.0
     y_hom: float = 0.0
 
