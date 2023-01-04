@@ -25,7 +25,7 @@ class MultiCameraTracker:
         self.camera_count: int = 0
         self.homographies: Dict = get_new_homographies()  # TODO: this needs refactoring when time to cleanup
         self.three_d_points: List[float] = []
-        self.plane: np.array = None
+        self.plane: List[np.array] = None  # Looks more like Tuple(np.array, np.array, np.array, np.array) - should refactor this!
         FieldDimensions = namedtuple('FieldDimensions', 'width length')
         self.field_model: Tuple = FieldDimensions(68, 105)
 
@@ -83,12 +83,21 @@ class MultiCameraTracker:
             if self.plane is None:
                 self.plane = self.form_plane()
 
-            if self.plane is not None:
-                three_d_estimation = self.internal_height_estimation(detections)
-                three_d_estimation = ThreeDPoints(x=three_d_estimation[0],
-                                                  y=three_d_estimation[1],
-                                                  z=three_d_estimation[2],
-                                                  timestamp=detections[0].timestamp)
+            if self.plane is not None:  # Check that the ball was recently detected by two cameras
+
+                if all(np.all(arr == 0) for arr in self.plane):  # Check if the plane is all 0's (i.e. if the ball is still) (unncesarily complicated expression as are plane isn't just a single np.array, its 4 in a list atm)
+                    three_d_estimation = ThreeDPoints(
+                        x=detections[0].x,
+                        y=detections[0].y,
+                        z=0,
+                        timestamp=detections[0].timestamp
+                    )
+                else:
+                    three_d_estimation = self.internal_height_estimation(detections)
+                    three_d_estimation = ThreeDPoints(x=three_d_estimation[0],
+                                                      y=three_d_estimation[1],
+                                                      z=three_d_estimation[2],
+                                                      timestamp=detections[0].timestamp)
 
                 if (self.field_model.width > three_d_estimation.x > 0) and \
                         (self.field_model.length > three_d_estimation.y > 0):
