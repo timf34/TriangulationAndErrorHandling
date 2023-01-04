@@ -52,8 +52,7 @@ class TriangulationVisualization:
         cam_hom.x, cam_hom.y = self.convert_det_to_pixels(cam_hom)
         self.pitch_image = self.draw_point(int(cam_hom.x), int(cam_hom.y), camera_id=camera_id)
 
-
-    def draw_point(self, x, y, camera_id: int = None):
+    def draw_point(self, x, y, camera_id: int = None) -> np.array:
         """
         This function allows us to draw a point on self.pitch_image. Note we have to call cv2.circle before cv2.putText
         because cv2.putText draws on top of the image.
@@ -103,12 +102,11 @@ class TriangulationVisualization:
                 x_3, y_3 = get_xy_from_box(box_3)
                 image_3 = cv2.putText(image_3, f"x: {x_3}, y: {y_3}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
                 image_3 = draw_bboxes_red(image_3, x_3, y_3)
-                # note: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
-                x_3 = 1920 - x_3
+                x_3 = 1920 - x_3  # note: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
                 cam_3_det = self.x_y_to_detection(x_3, y_3, i, camera_id=3)
+
                 dets.append(cam_3_det)
 
-                # Perform homography for visualizing individual camera detections
                 self.visualize_individual_cam_homography(tracker, cam_3_det, camera_id=3)
 
             if box_1.size != 0:
@@ -118,12 +116,13 @@ class TriangulationVisualization:
 
                 # Get detection
                 cam_1_det = self.x_y_to_detection(x_1, y_1, i, camera_id=1)
+
                 dets.append(cam_1_det)
 
-                # Perform homography for visualizing individual camera detections
                 self.visualize_individual_cam_homography(tracker, cam_1_det, camera_id=1)
 
             det = tracker.multi_camera_analysis(dets) if dets else None
+
             if det is not None:
                 det.x, det.y = self.convert_det_to_pixels(det)
                 self.pitch_image = self.draw_point(int(det.x), int(det.y))
