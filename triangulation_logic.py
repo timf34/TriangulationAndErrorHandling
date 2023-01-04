@@ -24,7 +24,7 @@ class MultiCameraTracker:
         self.cameras: Dict[str, Camera] = {}
         self.camera_count: int = 0
         self.homographies: Dict = get_new_homographies()  # TODO: this needs refactoring when time to cleanup
-        self.three_d_points: List[float] = []
+        self.three_d_points: List[ThreeDPoints] = []
         self.plane: List[np.array] = None  # Looks more like Tuple(np.array, np.array, np.array, np.array) - should refactor this!
         FieldDimensions = namedtuple('FieldDimensions', 'width length')
         self.field_model: Tuple = FieldDimensions(68, 105)
@@ -92,6 +92,7 @@ class MultiCameraTracker:
                         z=0,
                         timestamp=detections[0].timestamp
                     )
+                    print("using homogaphy")
                 else:
                     three_d_estimation = self.internal_height_estimation(detections)
                     three_d_estimation = ThreeDPoints(x=three_d_estimation[0],
@@ -154,8 +155,6 @@ class MultiCameraTracker:
 
             temp1 = last_2_points[-1]
             # this is probably not 'good code' but it works, we need to subtract two vectors
-
-            # TODO: there is problems with the math here - step through this using the debugger. When I use metres, its just far too close an approximation and we end up with 0.
 
             a = np.array([[temp1.x], [temp1.y], [temp1.z]])
             temp2 = last_2_points[-2]
@@ -301,7 +300,7 @@ class MultiCameraTracker:
         midpoint = (shortest_point1 + shortest_point2) / 2
 
         # Convert ndarray: (3, 1) to list of ints
-        intersection = [int(midpoint[0]), int(midpoint[1]), int(midpoint[2])]
+        intersection = [midpoint[0], midpoint[1], midpoint[2]]
 
         return intersection
 

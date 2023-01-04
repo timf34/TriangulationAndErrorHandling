@@ -63,8 +63,11 @@ class TriangulationVisualization:
         :param y: y coordinate of point
         :return: image with point drawn on it
         """
-        assert 0 <= x <= self.pitch_width and 0 <= y <= self.pitch_height, f"x and y must be between " \
-                                                                               f"{self.pitch_width} and {self.pitch_height}"
+        if x <= 0 or x >= self.pitch_width or y <= 0 or y >= self.pitch_height:
+            print(f"x and y must be between {self.pitch_width} and {self.pitch_height} - but got {x} and {y}")
+            x = 0
+            y = 0
+
         if camera_id == 1:
             color = (0, 255, 0)
             # Put a 1 inside the circle
@@ -179,8 +182,8 @@ class TriangulationVisualization:
 
 
 def main():
-    triangulation = TriangulationVisualization(small_dataset=True)
-    triangulation.run("v3-full2-with-1-dets-triangulation.avi", show_images=False, save_video=True)
+    triangulation = TriangulationVisualization(small_dataset=False)
+    triangulation.run("full-vid-with-formplane.avi", show_images=False, save_video=True)
 
 
 if __name__ == '__main__':
