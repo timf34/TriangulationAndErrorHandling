@@ -26,6 +26,10 @@ def get_xy_from_box(box: List[Tuple[int, int, int, int]]) -> Tuple[float, float]
     return x, y
 
 
+def x_y_to_detection(x_1, y_1, i, camera_id: int) -> Detections:
+    return Detections(camera_id=camera_id, probability=0.9, timestamp=i, x=x_1, y=y_1, z=0)
+
+
 class TriangulationVisualization:
     def __init__(self, small_dataset=False, use_formplane: bool = False):
         self.dataset = create_triangulation_dataset(small_dataset=small_dataset)
@@ -34,6 +38,10 @@ class TriangulationVisualization:
         self.pitch_height: int = self.pitch_image.shape[0]
         self.timer: Timer = Timer()
         self.use_formplane = use_formplane
+
+        self.tracker = MultiCameraTracker()
+        self.tracker.add_camera(1, JETSON1_REAL_WORLD)
+        self.tracker.add_camera(3, JETSON3_REAL_WORLD)
 
     @staticmethod
     def plot_images(image_1, image_2, image_3):
@@ -83,20 +91,12 @@ class TriangulationVisualization:
             return cv2.circle(self.pitch_image, (x, y), 15, color, -3)
 
     @staticmethod
-    def x_y_to_detection(x_1, y_1, i, camera_id: int) -> Detections:
-        return Detections(camera_id=camera_id, probability=0.9, timestamp=i, x=x_1, y=y_1, z=0)
-
-    @staticmethod
     def create_plot():
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(5, 5), tight_layout=True,
                                             gridspec_kw={'hspace': .1})
         return fig, ax1, ax2, ax3
 
     def get_triangulated_images(self) -> Generator:
-        tracker = MultiCameraTracker(self.use_formplane)
-        tracker.add_camera(1, JETSON1_REAL_WORLD)
-        tracker.add_camera(3, JETSON3_REAL_WORLD)
-
         for i, (image_3, image_1, box_3, box_1, label_3, label_1, image_path_3, image_path_1) in enumerate(self.dataset):
 
             self.pitch_image = np.array(Image.open("images/pitch.jpg"))  # Clear the image
@@ -108,11 +108,11 @@ class TriangulationVisualization:
                 image_3 = cv2.putText(image_3, f"x: {x_3}, y: {y_3}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
                 image_3 = draw_bboxes_red(image_3, x_3, y_3)
                 x_3 = 1920 - x_3  # note: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
-                cam_3_det = self.x_y_to_detection(x_3, y_3, i, camera_id=3)
+                cam_3_det = x_y_to_detection(x_3, y_3, i, camera_id=3)
 
                 dets.append(cam_3_det)
 
-                self.visualize_individual_cam_homography(tracker, cam_3_det, camera_id=3)
+                self.visualize_individual_cam_homography(self.tracker, cam_3_det, camera_id=3)
 
             if box_1.size != 0:
                 x_1, y_1 = get_xy_from_box(box_1)
@@ -120,13 +120,13 @@ class TriangulationVisualization:
                 image_1 = cv2.putText(image_1, f"x: {x_1}, y: {y_1}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
 
                 # Get detection
-                cam_1_det = self.x_y_to_detection(x_1, y_1, i, camera_id=1)
+                cam_1_det = x_y_to_detection(x_1, y_1, i, camera_id=1)
 
                 dets.append(cam_1_det)
 
-                self.visualize_individual_cam_homography(tracker, cam_1_det, camera_id=1)
+                self.visualize_individual_cam_homography(self.tracker, cam_1_det, camera_id=1)
 
-            det = tracker.multi_camera_analysis(dets) if dets else None
+            det = self.tracker.multi_camera_analysis(dets) if dets else None
 
             if det is not None:
                 det.x, det.y = self.convert_det_to_pixels(det)
