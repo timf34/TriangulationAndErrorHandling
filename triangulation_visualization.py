@@ -27,12 +27,13 @@ def get_xy_from_box(box: List[Tuple[int, int, int, int]]) -> Tuple[float, float]
 
 
 class TriangulationVisualization:
-    def __init__(self, small_dataset=False):
+    def __init__(self, small_dataset=False, use_formplane: bool = False):
         self.dataset = create_triangulation_dataset(small_dataset=small_dataset)
         self.pitch_image: np.array = np.array(Image.open("images/pitch.jpg"))
         self.pitch_width: int = self.pitch_image.shape[1]
         self.pitch_height: int = self.pitch_image.shape[0]
         self.timer: Timer = Timer()
+        self.use_formplane = use_formplane
 
     @staticmethod
     def plot_images(image_1, image_2, image_3):
@@ -92,7 +93,7 @@ class TriangulationVisualization:
         return fig, ax1, ax2, ax3
 
     def get_triangulated_images(self) -> Generator:
-        tracker = MultiCameraTracker()
+        tracker = MultiCameraTracker(self.use_formplane)
         tracker.add_camera(1, JETSON1_REAL_WORLD)
         tracker.add_camera(3, JETSON3_REAL_WORLD)
 
@@ -182,8 +183,8 @@ class TriangulationVisualization:
 
 
 def main():
-    triangulation = TriangulationVisualization(small_dataset=False)
-    triangulation.run("full-vid-with-formplane.avi", show_images=False, save_video=True)
+    triangulation = TriangulationVisualization(small_dataset=True)
+    triangulation.run("full-vid-with-formplane.avi", show_images=False, save_video=False)
 
 
 if __name__ == '__main__':
