@@ -6,7 +6,7 @@ import numpy as np
 
 from copy import deepcopy
 from PIL import Image
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from data.utils import read_bohs_ground_truth
 
@@ -31,6 +31,12 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
                  image_name_length: int = 7,
                  only_matching_frames: bool = True,
                  small_dataset: bool = False,
+                 cameras: Union[List[str], Tuple] = (
+                     # "jetson3_1_4_2022_time__19_45_01_4",
+                     # "jetson1_date_01_04_2022_time__19_45_01_4",
+                     "jetson3_1_4_2022_time__20_40_14_25",
+                     "jetson1_date_01_04_2022_time__20_40_14_25"
+                 ),
 
                  ):
         """
@@ -48,30 +54,78 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
         self.whole_dataset = whole_dataset
         self.dataset_size = dataset_size
         self.small_dataset = small_dataset
-        self.cameras: List[str] = [
-            # "jetson3_1_4_2022_time__19_45_01_4",
-            # "jetson1_date_01_04_2022_time__19_45_01_4",
-            "jetson3_1_4_2022_time__20_40_14_25",
-            "jetson1_date_01_04_2022_time__20_40_14_25"
-        ]
+        self.cameras: List[str] = cameras
         self.image_name_length = image_name_length
         self.image_extension: str = image_extension
 
         self.only_matching_frames: bool = only_matching_frames  # Only show frames where both cameras have a frame with a ball.
 
         self.gt_annotations: dict = {}
-        self.image_list: list = []
 
         # The folder paths we will be using.
         self.image_folder_path = os.path.join(self.dataset_path, 'unpacked_jpg')
         self.annotations_folder_path = os.path.join(self.dataset_path, 'annotations')
 
+        self.get_image_list()  # Sets self.image_list
+
+
+
+        self.n_images = len(self.image_list)
+        print(f"Total number of Bohs Images: {self.n_images}")
+        self.ball_images_ndx = set(self.get_elems_with_ball())
+        self.no_ball_images_ndx = set([ndx for ndx in range(self.n_images) if ndx not in self.ball_images_ndx])
+        print(f'BOHS: {format(len(self.ball_images_ndx))} frames with the ball')
+        print(f'BOHS: {(len(self.no_ball_images_ndx))} frames without the ball')
+
+        print("whole dataset", whole_dataset)
+
+        # We now want to filter image_list to only include frames where both cameras have the ball
+        if self.only_matching_frames and len(cameras) > 1:
+            # self.image_list = self.get_matching_frames()
+            self.get_matching_frames()
+            if self.small_dataset:
+                self.image_list = self.image_list[start_frame:end_frame]
+
+    def __len__(self):
+        return self.n_images
+
+    def __getitem__(self, ndx):
+        # Returns transferred image as a normalized tensor
+        image_path_1, image_path_2, camera_id_1, camera_id_2, image_ndx_1, image_ndx_2 = self.image_list[ndx]
+
+        image_1 = Image.open(image_path_1)
+        image_2 = Image.open(image_path_2)
+
+        try:
+            box_1, label_1 = self.get_annotations(camera_id_1, image_ndx_1)
+            box_2, label_2 = self.get_annotations(camera_id_2, image_ndx_2)
+        except:
+            box_1 = [[]]
+            label_1 = []
+
+        # Convert PIL image to numpy array
+        image_1 = np.array(image_1)
+
+        # Write an exception to catch if box_1 is [[]]
+        if box_1 != [[]]:
+            image_1 = self.draw_bboxes(image_1, box_1)
+
+        return image_1, box_1, label_1, image_path_1
+
+    def get_image_list(self) -> None:
+        """
+        This is just extracted from the __init__ method to make it easier to read. Still messy af though.
+        :return:
+        """
         # TODO: I need to write a file/ page on what the different data structures that I have are.
+
+        self.image_list = []
 
         for camera_id in self.cameras:
             # Ensure annotations file path exists
             annotations_file_path = os.path.join(self.annotations_folder_path, camera_id + '.xml')
-            assert os.path.exists(annotations_file_path), f"Annotations file path {annotations_file_path} does not exist."
+            assert os.path.exists(
+                annotations_file_path), f"Annotations file path {annotations_file_path} does not exist."
 
             # Read ground truth data for the sequence
             self.gt_annotations[camera_id] = read_bohs_ground_truth(annotations_path=self.annotations_folder_path,
@@ -97,54 +151,6 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
                 else:
                     print("doesn't exist", file_path)
                     print("check whether its frame_000001.png or just 000001.png")
-
-
-        self.n_images = len(self.image_list)
-        print(f"Total number of Bohs Images: {self.n_images}")
-        self.ball_images_ndx = set(self.get_elems_with_ball())
-        self.no_ball_images_ndx = set([ndx for ndx in range(self.n_images) if ndx not in self.ball_images_ndx])
-        print(f'BOHS: {format(len(self.ball_images_ndx))} frames with the ball')
-        print(f'BOHS: {(len(self.no_ball_images_ndx))} frames without the ball')
-
-        print("whole dataset", whole_dataset)
-
-        # We now want to filter image_list to only include frames where both cameras have the ball
-        if self.only_matching_frames:
-            # self.image_list = self.get_matching_frames()
-            self.get_matching_frames()
-            if self.small_dataset:
-                self.image_list = self.image_list[start_frame:end_frame]
-
-    def __len__(self):
-        return self.n_images
-
-    def __getitem__(self, ndx):
-        # Returns transferred image as a normalized tensor
-        image_path_1, image_path_2, camera_id_1, camera_id_2, image_ndx_1, image_ndx_2 = self.image_list[ndx]
-
-        image_1 = Image.open(image_path_1)
-        image_2 = Image.open(image_path_2)
-
-        try:
-            box_1, label_1 = self.get_annotations(camera_id_1, image_ndx_1)
-            box_2, label_2 = self.get_annotations(camera_id_2, image_ndx_2)
-        except:
-            box_1 = [[]]
-            box_2 = [[]]
-            label_1 = []
-            label_2 = []
-
-        # Convert PIL image to numpy array
-        image_1 = np.array(image_1)
-        image_2 = np.array(image_2)
-
-        # Write an exception to catch if box_1 is [[]]
-        if box_1 != [[]]:
-            image_1 = self.draw_bboxes(image_1, box_1)
-        if box_2 != [[]]:
-            image_2 = self.draw_bboxes(image_2, box_2)
-
-        return image_1, image_2, box_1, box_2, label_1, label_2, image_path_1, image_path_2
 
     def get_annotations(self, camera_id, image_ndx):
         # Prepare annotations as list of boxes (xmin, ymin, xmax, ymax) in pixel coordinates
@@ -238,9 +244,6 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
 
 
 
-            pass
-
-
         # Update all our variables to reflect the new image list
         self.image_list = image_list
         self.n_images = len(image_list)
@@ -275,6 +278,40 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
             print(f"Folder {folder_name} already exists")
 
 
+class SingleCameraTriangulationDataset(TriangulationBohsDataset):
+    """
+        This class is exactly the same as TriangulationBohsDataset, except that it only uses one camera.
+
+        TODO: the inheritance should be the other way around! Since we aren't using the get_matching_frames func.
+    """
+    def __init__(self, cameras: List[str]):
+        self.cameras = cameras
+        super().__init__(start_frame=677, end_frame=750, cameras=cameras)
+        self.get_image_list()  # Sets self.image_list
+        self.n_images = len(self.image_list)
+
+    def __getitem__(self, ndx):
+        # Returns transferred image as a normalized tensor
+        image_path_1, camera_id_1, image_ndx_1= self.image_list[ndx]
+
+        image_1 = Image.open(image_path_1)
+
+        try:
+            box_1, label_1 = self.get_annotations(camera_id_1, image_ndx_1)
+        except:
+            box_1 = [[]]
+            label_1 = []
+
+        # Convert PIL image to numpy array
+        image_1 = np.array(image_1)
+
+        # Write an exception to catch if box_1 is [[]]
+        if box_1 != [[]]:
+            image_1 = self.draw_bboxes(image_1, box_1)
+
+        return image_1, box_1, label_1, image_path_1
+
+
 def create_triangulation_dataset(
         only_ball_frames: bool = False,
         dataset_size: int = 2,
@@ -284,32 +321,43 @@ def create_triangulation_dataset(
         small_dataset: bool = False,
         start_frame: int = 657,
         end_frame: int = 800,
+        single_camera: bool = False,
 ):
 
     if cameras is None:
-        cameras = [1]
-
-    return TriangulationBohsDataset(
-        only_ball_frames=only_ball_frames,
-        dataset_size=dataset_size,
-        image_extension=image_extension,
-        image_name_length=image_name_length,
-        small_dataset=small_dataset,
-        start_frame=start_frame,
-        end_frame=end_frame,
+        # cameras = ["jetson3_1_4_2022_time__20_40_14_25"]
+        cameras = ["jetson1_date_01_04_2022_time__20_40_14_25"]
+    if single_camera:
+        return SingleCameraTriangulationDataset(cameras=cameras)
+    else:
+        return TriangulationBohsDataset(
+            only_ball_frames=only_ball_frames,
+            dataset_size=dataset_size,
+            image_extension=image_extension,
+            image_name_length=image_name_length,
+            small_dataset=small_dataset,
+            start_frame=start_frame,
+            end_frame=end_frame,
     )
 
 
 def main():
-    dataset = create_triangulation_dataset()
+    single_camera=True
+    dataset = create_triangulation_dataset(single_camera=single_camera)
 
     for i in range(len(dataset)):
-        image_1, image_2, box_1, box_2, label_1, label_2, image_path_1, image_path_2 = dataset[i]
-        print(image_path_1, image_path_2)
-        print(box_1, box_2)
-        print(label_1, label_2)
-        print()
-        if i == 50:
+        if single_camera:
+            image_1, box_1, label_1, image_path_1= dataset[i]
+            print(dataset.image_list)
+            print(image_path_1)
+            print(box_1)
+            print(label_1)
+        else:
+            image_1, image_2, box_1, box_2, label_1, label_2, image_path_1, image_path_2 = dataset[i]
+            print(image_path_1, image_path_2)
+            print(box_1, box_2)
+            print(label_1, label_2)
+        if i == 1:
             break
 
 
