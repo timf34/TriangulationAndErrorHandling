@@ -20,7 +20,7 @@ THREE_D_POINTS_FLAG: List[float] = [999., 999., 999.]  # Flag used for when we h
 
 
 class MultiCameraTracker:
-    def __init__(self):
+    def __init__(self, use_formplane: bool = True):
         self.cameras: Dict[str, Camera] = {}
         self.camera_count: int = 0
         self.homographies: Dict = get_new_homographies()  # TODO: this needs refactoring when time to cleanup
@@ -28,6 +28,7 @@ class MultiCameraTracker:
         self.plane: List[np.array] = None  # Looks more like Tuple(np.array, np.array, np.array, np.array) - should refactor this!
         FieldDimensions = namedtuple('FieldDimensions', 'width length')
         self.field_model: Tuple = FieldDimensions(68, 105)
+        self.use_formplane: bool = use_formplane
 
     def add_camera(self, idx, real_world_camera_coords):
         # self.homographies[str(idx)] = homography_idx(str(idx))
@@ -85,7 +86,9 @@ class MultiCameraTracker:
 
             if self.plane is not None:  # Check that the ball was recently detected by two cameras
 
-                if all(np.all(arr == 0) for arr in self.plane):  # Check if the plane is all 0's (i.e. if the ball is still) (unncesarily complicated expression as are plane isn't just a single np.array, its 4 in a list atm)
+
+                # Flag for whether to just use homography or use form plane.
+                if all(np.all(arr == 0) for arr in self.plane) or not self.use_formplane:  # Check if the plane is all 0's (i.e. if the ball is still) (unncesarily complicated expression as are plane isn't just a single np.array, its 4 in a list atm)
                     three_d_estimation = ThreeDPoints(
                         x=detections[0].x,
                         y=detections[0].y,
@@ -170,6 +173,7 @@ class MultiCameraTracker:
         normal = np.array([-ab[1], ab[0], 0], dtype=object)
 
         # Equation of the plane, ax + by + cz + constant = 0... and where the plane is vertical so z is always zero
+        # constant = -(ax + by + cz) = -ax - by
         plane = np.array([normal[0], normal[1], 0, -(a[0] * normal[0] + a[1] * normal[1])], dtype=object)
 
         self.plane = plane
