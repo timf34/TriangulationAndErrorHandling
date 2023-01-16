@@ -39,7 +39,7 @@ class TriangulationVisualization:
         self.timer: Timer = Timer()
         self.use_formplane = use_formplane
 
-        self.tracker = MultiCameraTracker()
+        self.tracker = MultiCameraTracker(use_formplane=self.use_formplane)
         self.tracker.add_camera(1, JETSON1_REAL_WORLD)
         self.tracker.add_camera(3, JETSON3_REAL_WORLD)
 
@@ -183,8 +183,8 @@ class TriangulationVisualization:
 
 
 def main():
-    triangulation = TriangulationVisualization(small_dataset=True)
-    triangulation.run("full-vid-with-formplane.avi", show_images=False, save_video=False)
+    triangulation = TriangulationVisualization(small_dataset=False, use_formplane=False)
+    triangulation.run("BohsNet-FullVid-Homography.avi", show_images=False, save_video=True)
 
 
 if __name__ == '__main__':
