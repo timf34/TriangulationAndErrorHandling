@@ -31,7 +31,7 @@ def x_y_to_detection(x_1, y_1, i, camera_id: int) -> Detections:
 
 
 class TriangulationVisualization:
-    def __init__(self, small_dataset=False, use_formplane: bool = False):
+    def __init__(self, small_dataset=False, use_formplane: bool = False, draw_text: bool = False):
         self.dataset = create_triangulation_dataset(small_dataset=small_dataset)
         self.pitch_image: np.array = np.array(Image.open("images/pitch.jpg"))
         self.pitch_width: int = self.pitch_image.shape[1]
@@ -42,6 +42,7 @@ class TriangulationVisualization:
         self.tracker = MultiCameraTracker(use_formplane=self.use_formplane)
         self.tracker.add_camera(1, JETSON1_REAL_WORLD)
         self.tracker.add_camera(3, JETSON3_REAL_WORLD)
+        self.draw_text: bool = draw_text
 
     @staticmethod
     def plot_images(image_1, image_2, image_3):
@@ -79,11 +80,14 @@ class TriangulationVisualization:
 
         if camera_id == 1:
             color = (0, 255, 0)
-            # Put a 1 inside the circle
+            if not self.draw_text:
+                return cv2.circle(self.pitch_image, (x, y), 20, color, -3)
             cv2.circle(self.pitch_image, (x, y), 20, color, -3)
             return cv2.putText(self.pitch_image, "1", (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
         elif camera_id == 3:
             color = (0, 0, 255)
+            if not self.draw_text:
+                return cv2.circle(self.pitch_image, (x, y), 20, color, -3)
             cv2.circle(self.pitch_image, (x, y), 20, color, -3)
             return cv2.putText(self.pitch_image, "3", (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         else:
@@ -105,33 +109,36 @@ class TriangulationVisualization:
 
             if box_3.size != 0:
                 x_3, y_3 = get_xy_from_box(box_3)
-                image_3 = cv2.putText(image_3, f"x: {x_3}, y: {y_3}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+                if self.draw_text:
+                    image_3 = cv2.putText(image_3, f"x: {x_3}, y: {y_3}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
                 image_3 = draw_bboxes_red(image_3, x_3, y_3)
                 x_3 = 1920 - x_3  # note: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
                 cam_3_det = x_y_to_detection(x_3, y_3, i, camera_id=3)
 
                 dets.append(cam_3_det)
 
-                self.visualize_individual_cam_homography(self.tracker, cam_3_det, camera_id=3)
+                # self.visualize_individual_cam_homography(self.tracker, cam_3_det, camera_id=3)
 
             if box_1.size != 0:
                 x_1, y_1 = get_xy_from_box(box_1)
                 image_1 = draw_bboxes_red(image_1, x_1, y_1)
-                image_1 = cv2.putText(image_1, f"x: {x_1}, y: {y_1}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+                if self.draw_text:
+                    image_1 = cv2.putText(image_1, f"x: {x_1}, y: {y_1}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
 
                 # Get detection
                 cam_1_det = x_y_to_detection(x_1, y_1, i, camera_id=1)
 
                 dets.append(cam_1_det)
 
-                self.visualize_individual_cam_homography(self.tracker, cam_1_det, camera_id=1)
+                # self.visualize_individual_cam_homography(self.tracker, cam_1_det, camera_id=1)
 
             det = self.tracker.multi_camera_analysis(dets) if dets else None
 
             if det is not None:
                 det.x, det.y = self.convert_det_to_pixels(det)
                 self.pitch_image = self.draw_point(int(det.x), int(det.y))
-                self.pitch_image = cv2.putText(self.pitch_image, f"x: {det.x}, y: {det.y}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+                if self.draw_text:
+                    self.pitch_image = cv2.putText(self.pitch_image, f"x: {det.x}, y: {det.y}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
             else:
                 self.pitch_image = self.draw_point(0, 0)
 
@@ -142,8 +149,6 @@ class TriangulationVisualization:
             yield image_3, image_1, self.pitch_image
 
     def run(self, video_name: str, show_images: bool = False, save_video: bool = True) -> None:
-        fig, ax1, ax2, ax3 = self.create_plot()
-
         # Create a cv2 VideoWriter object
         if save_video:
             out = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*'XVID'), 60, (1280, 2160))
@@ -184,7 +189,7 @@ class TriangulationVisualization:
 
 def main():
     triangulation = TriangulationVisualization(small_dataset=False, use_formplane=False)
-    triangulation.run("BohsNet-FullVid-Homography.avi", show_images=False, save_video=True)
+    triangulation.run("clean_demo_video2.avi", show_images=False, save_video=True)
 
 
 if __name__ == '__main__':
