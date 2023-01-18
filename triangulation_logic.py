@@ -5,6 +5,8 @@ from utils.data_classes import Camera, Detections, ThreeDPoints
 from typing import Dict, List, Union
 
 from python_learning.homography_practice import get_new_homographies
+from utils.config import get_image_field_coordinates
+
 
 JETSON1_REAL_WORLD = np.array([[-19.41], [-21.85], [7.78]])
 JETSON3_REAL_WORLD = np.array([[0.], [86.16], [7.85]])
@@ -24,6 +26,7 @@ class MultiCameraTracker:
         self.cameras: Dict[str, Camera] = {}
         self.camera_count: int = 0
         self.homographies: Dict = get_new_homographies()  # TODO: this needs refactoring when time to cleanup
+        self.image_field_coordinates: Dict = get_image_field_coordinates()
         self.three_d_points: List[ThreeDPoints] = []
         self.plane: List[np.array] = None  # Looks more like Tuple(np.array, np.array, np.array, np.array) - should refactor this!
         FieldDimensions = namedtuple('FieldDimensions', 'width length')
@@ -31,10 +34,23 @@ class MultiCameraTracker:
         self.use_formplane: bool = use_formplane
 
     def add_camera(self, idx, real_world_camera_coords):
-        # self.homographies[str(idx)] = homography_idx(str(idx))
-        cam = Camera(id=idx, homography=self.homographies[str(idx)], real_world_camera_coords=real_world_camera_coords)
+        cam = Camera(
+            id=idx,
+            homography=self.homographies[str(idx)],
+            real_world_camera_coords=real_world_camera_coords,
+            image_field_coordinates=self.image_field_coordinates[str(idx)]
+        )
         self.cameras[str(idx)] = cam
         self.camera_count = len(self.cameras)
+
+    def remove_oob_detections(self, _detections: List[Detections]) -> List[Union[Detections, None]]:
+        """
+        This method removes any detections that are out of bounds of the field in the image frame.
+        Args:
+            _detections: list of Detections objects
+        Returns: list of Detections objects
+        """
+        raise NotImplementedError
 
     def multi_camera_analysis(self, _detections: List[Detections]):
         """
@@ -45,7 +61,8 @@ class MultiCameraTracker:
             Args: Detections object iterable
         Returns: 3D world position of the ball
         """
-        # print("detections", detections)
+        # TODO: refactor this function. Reduce its length and complexity
+
 
         detections = self.perform_homography(copy.deepcopy(_detections))
 
@@ -56,7 +73,6 @@ class MultiCameraTracker:
         # In case there are no detections
         three_d_pos = None
 
-        # TODO: need to extend this to handle more than two detections... but should keep it simple for now! This would be significantly more complicated
         if len(detections) == 2:
 
             # deleting the plane
@@ -102,6 +118,11 @@ class MultiCameraTracker:
                                                       y=three_d_estimation[1],
                                                       z=three_d_estimation[2],
                                                       timestamp=detections[0].timestamp)
+                    if len(three_d_estimation.x) > 1:
+                        print(len(three_d_estimation.x))
+                        print("okkkkkk")
+
+                print("yolo ooo ya", self.field_model, three_d_estimation)
 
                 if (self.field_model.width > three_d_estimation.x > 0) and \
                         (self.field_model.length > three_d_estimation.y > 0):
