@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import NamedTuple
+from typing import NamedTuple, Tuple
 
 
 # TODO: will change this to accept a box, and then process the box to get x, y coordinates... maybe
@@ -28,4 +28,5 @@ class ThreeDPoints:
 class Camera(NamedTuple):
     id: int
     homography: list
-    real_world_camera_coords: tuple
+    real_world_camera_coords: Tuple
+    image_field_coordinates: Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]]  # Coordinates are in the format (x, y), and start from the top left corner and go clockwise.
