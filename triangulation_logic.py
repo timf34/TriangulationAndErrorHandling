@@ -53,24 +53,6 @@ class MultiCameraTracker:
             List[Union[Detections, None]]: List of detections objects with the out of bound detections removed.
         """
 
-        # def is_det_in_field(det):
-        #     image_field_coordinates = self.image_field_coordinates[str(det.camera_id)]
-        #     x_values, y_values = zip(*image_field_coordinates)
-        #     return min(x_values) <= det.x <= max(x_values) and min(y_values) <= det.y <= max(y_values)
-        #
-        # return list(filter(is_det_in_field, _detections))
-
-        # for det in _detections.copy():
-        #
-        #     # Access the field coordinates for the camera.
-        #     image_field_coordinates = self.image_field_coordinates[str(det.camera_id)]
-        #     x_values, y_values = zip(*image_field_coordinates)
-        #
-        #     if not min(x_values) <= det.x <= max(x_values) or not min(y_values) <= det.y <= max(y_values):
-        #         _detections.remove(det)
-        #
-        # return _detections
-
         for det in _detections.copy():
             image_field_coordinates = self.image_field_coordinates[str(det.camera_id)]
             # Create the path of the rhombus
