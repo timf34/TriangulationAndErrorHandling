@@ -51,8 +51,15 @@ class MultiCameraTracker:
             _detections: list of Detections objects
         Returns: list of Detections objects
         """
-         # Iterate over a copy of the original list so that we can remove items from the original list (without skipping items)
+        # def is_det_in_field(det):
+        #     image_field_coordinates = self.image_field_coordinates[str(det.camera_id)]
+        #     x_values, y_values = zip(*image_field_coordinates)
+        #     return min(x_values) <= det.x <= max(x_values) and min(y_values) <= det.y <= max(y_values)
+        #
+        # return list(filter(is_det_in_field, _detections))
         for det in _detections.copy():
+
+            # Access the field coordinates for the camera.
             image_field_coordinates = self.image_field_coordinates[str(det.camera_id)]
             x_values, y_values = zip(*image_field_coordinates)
 
