@@ -26,7 +26,7 @@ class MultiCameraTracker:
         self.cameras: Dict[str, Camera] = {}
         self.camera_count: int = 0
         self.homographies: Dict = get_new_homographies()  # TODO: this needs refactoring when time to cleanup
-        self.image_field_coordinates: Dict = get_image_field_coordinates()
+        self.image_field_coordinates: Dict[str, Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]]] = get_image_field_coordinates()
         self.three_d_points: List[ThreeDPoints] = []
         self.plane: List[np.array] = None  # Looks more like Tuple(np.array, np.array, np.array, np.array) - should refactor this!
         FieldDimensions = namedtuple('FieldDimensions', 'width length')
@@ -43,6 +43,7 @@ class MultiCameraTracker:
         self.cameras[str(idx)] = cam
         self.camera_count = len(self.cameras)
 
+    # TODO: this is perfect for unit practical_testing.
     def remove_oob_detections(self, _detections: List[Detections]) -> List[Union[Detections, None]]:
         """
         This method removes any detections that are out of bounds of the field in the image frame.
@@ -50,7 +51,16 @@ class MultiCameraTracker:
             _detections: list of Detections objects
         Returns: list of Detections objects
         """
-        raise NotImplementedError
+        for det in _detections:
+            # Get the camera ID and then get the image field coordinates for that camera
+            image_field_coordinates: Tuple = self.image_field_coordinates[str(det.camera_id)]
+            x1,y1, x2, y2, x3, y3, x4, y4 = image_field_coordinates
+
+            if not min(x1, x2, x3, x4) <= det.x <= max(x1, x2, x3, x4) and  \
+                min(y1, y2, y3, y4) <= det.y <= max(y1, y2, y3, y4):
+                _detections.remove(det)
+
+        return _detections
 
     def multi_camera_analysis(self, _detections: List[Detections]):
         """
