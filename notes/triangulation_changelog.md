@@ -6,3 +6,9 @@
   - Homography is implemented 
   - We exclude detections beyond the bounds of the pitch, however these are still sent as 0, 0 to the triangulation 
     logic
+
+### Version 1.1 - 18/1/23/
+
+- Implemented `remove_oob_detections()` which removes detections that are outside the bounds of the pitch
+  - Note: for the real time application, I would likely be as well off to slice the image at these bounds to reduce the
+    number of pixels that need to be processed (should be faster, if the CPU overhead of slicing the image isn't too much).
