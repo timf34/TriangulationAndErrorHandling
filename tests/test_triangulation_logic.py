@@ -46,7 +46,7 @@ def test_remove_oob_detections() -> None:
     in_bounds_detections: List[Detections] = [
         Detections(camera_id=1, probability=0.9, timestamp=0, x=800, y=800, z=0),
         Detections(camera_id=1, probability=0.9, timestamp=0, x=700, y=700, z=0),
-        Detections(camera_id=1, probability=0.9, timestamp=0, x=10, y=1000, z=0),
+        Detections(camera_id=1, probability=0.9, timestamp=0, x=10, y=1000, z=0),  # This is actually outside of the pitch, but within our bounds
         Detections(camera_id=3, probability=0.9, timestamp=0, x=800, y=800, z=0),
         Detections(camera_id=3, probability=0.9, timestamp=0, x=700, y=700, z=0),
     ]
@@ -67,8 +67,22 @@ def test_perform_homography() -> None:
         Detections(camera_id=1, probability=0.9, timestamp=0, x=800, y=800, z=0),
         Detections(camera_id=1, probability=0.9, timestamp=0, x=700, y=700, z=0),
         Detections(camera_id=1, probability=0.9, timestamp=0, x=10, y=1000, z=0),
-        Detections(camera_id=3, probability=0.9, timestamp=0, x=800, y=800, z=0),
+        Detections(camera_id=3, probability=0.9, timestamp=0, x=800, y=800, z=0),  # This is actually slightly outside of the pitch, but within our bounds
         Detections(camera_id=3, probability=0.9, timestamp=0, x=700, y=700, z=0),
     ]
 
-    pass
+    _detections = tracker.perform_homography(in_bounds_detections)
+
+    print(_detections)
+
+    # Check that the homography was performed correctly
+    assert len(_detections) == 5
+    assert len(_detections[0].x) == 1
+    assert type(_detections[0].x) == np.ndarray  # Not sure if this is what we want, but it's what we have for now
+
+    # Check that the outputs are reasonable
+    assert 10 < _detections[0].x[0] < 11
+    assert 46 < _detections[0].y[0] < 50
+    assert _detections[2].x < 0  # This value is in bounds, but outside of the pitch! It should be negative (in this scenario)
+    assert _detections[3].y < 0, "This value is just off the pitch, passed the side lines, so should be negative"
+
