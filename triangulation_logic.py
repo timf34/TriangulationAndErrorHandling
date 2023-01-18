@@ -43,20 +43,22 @@ class MultiCameraTracker:
         self.cameras[str(idx)] = cam
         self.camera_count = len(self.cameras)
 
-    # TODO: this is perfect for unit practical_testing.
     def remove_oob_detections(self, _detections: List[Detections]) -> List[Union[Detections, None]]:
         """
-        This method removes any detections that are out of bounds of the field in the image frame.
+        Removes any detections that are out of bounds of the field in the image frame.
         Args:
-            _detections: list of Detections objects
-        Returns: list of Detections objects
+            _detections (List[Detections]): List of detections objects
+        Returns:
+            List[Union[Detections, None]]: List of detections objects with the out of bound detections removed.
         """
+
         # def is_det_in_field(det):
         #     image_field_coordinates = self.image_field_coordinates[str(det.camera_id)]
         #     x_values, y_values = zip(*image_field_coordinates)
         #     return min(x_values) <= det.x <= max(x_values) and min(y_values) <= det.y <= max(y_values)
         #
         # return list(filter(is_det_in_field, _detections))
+
         for det in _detections.copy():
 
             # Access the field coordinates for the camera.
