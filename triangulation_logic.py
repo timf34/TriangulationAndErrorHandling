@@ -3,6 +3,7 @@ from collections import namedtuple
 from utils.camera_homography import *
 from utils.data_classes import Camera, Detections, ThreeDPoints
 from typing import Dict, List, Union
+from matplotlib.path import Path
 
 from python_learning.homography_practice import get_new_homographies
 from utils.config import get_image_field_coordinates
@@ -59,15 +60,24 @@ class MultiCameraTracker:
         #
         # return list(filter(is_det_in_field, _detections))
 
+        # for det in _detections.copy():
+        #
+        #     # Access the field coordinates for the camera.
+        #     image_field_coordinates = self.image_field_coordinates[str(det.camera_id)]
+        #     x_values, y_values = zip(*image_field_coordinates)
+        #
+        #     if not min(x_values) <= det.x <= max(x_values) or not min(y_values) <= det.y <= max(y_values):
+        #         _detections.remove(det)
+        #
+        # return _detections
+
         for det in _detections.copy():
-
-            # Access the field coordinates for the camera.
             image_field_coordinates = self.image_field_coordinates[str(det.camera_id)]
-            x_values, y_values = zip(*image_field_coordinates)
-
-            if not min(x_values) <= det.x <= max(x_values) or not min(y_values) <= det.y <= max(y_values):
+            # Create the path of the rhombus
+            rhombus_path = Path(image_field_coordinates)
+            # Check if the point is within the rhombus
+            if not rhombus_path.contains_point((det.x, det.y)):
                 _detections.remove(det)
-
         return _detections
 
     def multi_camera_analysis(self, _detections: List[Detections]):
@@ -81,7 +91,7 @@ class MultiCameraTracker:
         """
         # TODO: refactor this function. Reduce its length and complexity
 
-
+        _detections = self.remove_oob_detections(_detections)
         detections = self.perform_homography(copy.deepcopy(_detections))
 
         # Prepare for Triangulation
