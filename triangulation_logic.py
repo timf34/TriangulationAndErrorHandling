@@ -51,13 +51,12 @@ class MultiCameraTracker:
             _detections: list of Detections objects
         Returns: list of Detections objects
         """
-        for det in _detections:
-            # Get the camera ID and then get the image field coordinates for that camera
-            image_field_coordinates: Tuple = self.image_field_coordinates[str(det.camera_id)]
-            x1,y1, x2, y2, x3, y3, x4, y4 = image_field_coordinates
+         # Iterate over a copy of the original list so that we can remove items from the original list (without skipping items)
+        for det in _detections.copy():
+            image_field_coordinates = self.image_field_coordinates[str(det.camera_id)]
+            x_values, y_values = zip(*image_field_coordinates)
 
-            if not min(x1, x2, x3, x4) <= det.x <= max(x1, x2, x3, x4) and  \
-                min(y1, y2, y3, y4) <= det.y <= max(y1, y2, y3, y4):
+            if not min(x_values) <= det.x <= max(x_values) or not min(y_values) <= det.y <= max(y_values):
                 _detections.remove(det)
 
         return _detections

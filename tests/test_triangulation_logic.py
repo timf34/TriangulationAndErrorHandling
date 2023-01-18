@@ -27,7 +27,7 @@ def test_initialize_tracker():
     assert tracker is not None
 
 
-def test_remove_oob_detections():
+def test_remove_oob_detections() -> None:
     tracker = initialize_tracker()
 
 
@@ -35,16 +35,23 @@ def test_remove_oob_detections():
     oob_detections: List[Detections] = [
         Detections(camera_id=1, probability=0.9, timestamp=0, x=0, y=0, z=0),
         Detections(camera_id=1, probability=0.9, timestamp=0, x=-800, y=-800, z=0),
-        Detections(camera_id=1, probability=0.9, timestamp=0, x=2000, y=10000, z=0)
+        Detections(camera_id=1, probability=0.9, timestamp=0, x=2000, y=10000, z=0),
+        # Detections(camera_id=3, probability=0.9, timestamp=0, x=0, y=0, z=0),
+        # Detections(camera_id=3, probability=0.9, timestamp=0, x=-800, y=-800, z=0),
+        # Detections(camera_id=3, probability=0.9, timestamp=0, x=2000, y=10000, z=0),
+        # Detections(camera_id=3, probability=0.9, timestamp=0, x=0, y=250, z=0),
     ]
 
     # Detections that are in bounds
-    in_bounds_detections = [Detections(camera_id=1, probability=0.9, timestamp=0, x=800, y=800, z=0),
-                            Detections(camera_id=1, probability=0.9, timestamp=0, x=700, y=700, z=0)]
+    in_bounds_detections: List[Detections] = [
+        Detections(camera_id=1, probability=0.9, timestamp=0, x=800, y=800, z=0),
+        Detections(camera_id=1, probability=0.9, timestamp=0, x=700, y=700, z=0),
+        Detections(camera_id=1, probability=0.9, timestamp=0, x=10, y=1000, z=0),
+        # Detections(camera_id=3, probability=0.9, timestamp=0, x=800, y=800, z=0),
+        # Detections(camera_id=3, probability=0.9, timestamp=0, x=700, y=700, z=0),
+    ]
 
     _detections = oob_detections + in_bounds_detections
-
     _detections = tracker.remove_oob_detections(_detections)
-
     assert _detections == in_bounds_detections
 
