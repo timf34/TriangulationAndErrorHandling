@@ -73,7 +73,7 @@ class MultiCameraTracker:
         """
         # TODO: refactor this function. Reduce its length and complexity
 
-        _detections = self.remove_oob_detections(_detections)
+        _detections = self.remove_oob_detections(copy.deepcopy(_detections))
         detections = self.perform_homography(copy.deepcopy(_detections))
 
         # Prepare for Triangulation
