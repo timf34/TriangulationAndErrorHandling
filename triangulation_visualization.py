@@ -100,13 +100,20 @@ class TriangulationVisualization:
                                             gridspec_kw={'hspace': .1})
         return fig, ax1, ax2, ax3
 
-    def get_triangulated_images(self) -> Generator:
+    def temp_func_name(self, box) -> None:
+        """
+        Temp
+        :return:
+        """
+
+    def get_triangulated_images(self, short_video: bool = False) -> Generator:
         for i, (image_3, image_1, box_3, box_1, label_3, label_1, image_path_3, image_path_1) in enumerate(self.dataset):
 
             self.pitch_image = np.array(Image.open("images/pitch.jpg"))  # Clear the image
 
             dets = []
 
+            # todo: this should be a function
             if box_3.size != 0:
                 x_3, y_3 = get_xy_from_box(box_3)
                 if self.draw_text:
@@ -119,6 +126,7 @@ class TriangulationVisualization:
 
                 # self.visualize_individual_cam_homography(self.tracker, cam_3_det, camera_id=3)
 
+            # TODO: This should be a function
             if box_1.size != 0:
                 x_1, y_1 = get_xy_from_box(box_1)
                 image_1 = draw_bboxes_red(image_1, x_1, y_1)
@@ -146,9 +154,13 @@ class TriangulationVisualization:
             if i % 500 == 0:
                 print(f"Processed {i*2} images")
 
+            if short_video and i == 200:  # For testing; break after 500 images
+                print("breaking after 200 images")
+                break
+
             yield image_3, image_1, self.pitch_image
 
-    def run(self, video_name: str, show_images: bool = False, save_video: bool = True) -> None:
+    def run(self, video_name: str, show_images: bool = False, save_video: bool = True, short_video: bool = False) -> None:
         # Create a cv2 VideoWriter object
         if save_video:
             out = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*'XVID'), 60, (1280, 2160))
@@ -156,7 +168,7 @@ class TriangulationVisualization:
         self.timer.start()
 
         # Loop through self.get_triangulated_images(); update the plot; write the frame to the video
-        for i in self.get_triangulated_images():
+        for i in self.get_triangulated_images(short_video=True):
             img1, img2, pitch_image = i
 
             # Convert all images to RGB
@@ -189,7 +201,8 @@ class TriangulationVisualization:
 
 def main():
     triangulation = TriangulationVisualization(small_dataset=False, use_formplane=False)
-    triangulation.run("clean_demo_video2.avi", show_images=False, save_video=True)
+    # triangulation.run("14_22_time_20_40_14_25__v1__16_1_23.avi.avi", show_images=False, save_video=True)
+    triangulation.run("test_.avi", show_images=False, save_video=True, short_video=True)
 
 
 if __name__ == '__main__':
