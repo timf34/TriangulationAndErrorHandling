@@ -104,7 +104,7 @@ class MultiCameraTracker:
             else:
                 self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
                 three_d_pos = None
-                print("!!!the detected ball is out of range!!!")
+                # print("!!!the detected ball is out of range!!!")
 
         if len(detections) == 1:
             if self.plane is None:
@@ -142,7 +142,7 @@ class MultiCameraTracker:
                 else:
                     self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
                     three_d_pos = None
-                    print("!!!the detected ball is out of range!!!")
+                    # print("!!!the detected ball is out of range!!!")
 
         return three_d_pos
 
