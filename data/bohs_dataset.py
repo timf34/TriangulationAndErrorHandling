@@ -49,7 +49,9 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
         """
         print("Whole dataset: ", whole_dataset)
         assert start_frame < end_frame, "Start frame must be smaller than end frame"
-        self.dataset_path: str = r"C:\Users\timf3\OneDrive - Trinity College Dublin\Documents\Documents\datasets\Datasets\Bohs\bohs-preprocessed"
+        # TODO: this needs tidying up.
+        self.dataset_path: str = r"C:\Users\timf3\OneDrive - Trinity College Dublin\Documents\Documents\datasets\Datasets\Bohs\bohs-preprocessed"  # CVAT output
+        # self.dataset_path: str = r"C:\Users\timf3\PycharmProjects\BohsNet\data\processed_bohsnet_xml_output"  # BohsNet output
         self.only_ball_frames = only_ball_frames
         self.whole_dataset = whole_dataset
         self.dataset_size = dataset_size
@@ -102,15 +104,21 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
         except:
             box_1 = [[]]
             label_1 = []
+            box_2 = [[]]
+            label_2 = []
 
         # Convert PIL image to numpy array
         image_1 = np.array(image_1)
+        image_2 = np.array(image_2)
 
         # Write an exception to catch if box_1 is [[]]
         if box_1 != [[]]:
             image_1 = self.draw_bboxes(image_1, box_1)
 
-        return image_1, box_1, label_1, image_path_1
+        if box_2 != [[]]:
+            image_2 = self.draw_bboxes(image_2, box_2)
+
+        return image_1, image_2, box_1, box_2, label_1, label_2, image_path_1, image_path_2
 
     def get_image_list(self) -> None:
         """
