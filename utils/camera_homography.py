@@ -78,7 +78,7 @@ class RealWorldPitchCoords:
         self.box3: Tuple[int, int] = (5, 23)
         self.box4: Tuple[int, int] = (0, 23)
         self.goalPost1: Tuple[int, float] = (0, 34.5)  # They can be floats!
-        self.goalPost2: Tuple[int, float] = (0, 19.5)
+        self.goalPost2: Tuple[int, float] = (0, 29.5)
         self.semiCircle1: Tuple[int, int] = (16, 40)
         self.semiCircle2: Tuple[int, int] = (16, 24)
         self.boxParallel1: Tuple[int, int] = (16, 64)
