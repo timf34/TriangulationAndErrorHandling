@@ -107,31 +107,31 @@ class TriangulationVisualization:
                                             gridspec_kw={'hspace': .1})
         return fig, ax1, ax2, ax3
 
-    def temp_func_name(self,
-                       image: np.ndarray,
-                       box: Tuple[int, int, int, int],
-                       dets: List,
-                       jetson_number: int,
-                       index: int
-                       ) -> np.ndarray:
+    def process_camera_data(self,
+                            image: np.ndarray,
+                            box: Tuple[int, int, int, int],
+                            dets: List,
+                            jetson_number: int,
+                            index: int
+                            ) -> np.ndarray:
         """
-        Temp
+
         :return:
         """
         if box.size != 0:
-            x_3, y_3 = get_xy_from_box(box)
+            x, y = get_xy_from_box(box)
             if self.draw_text:
-                image = cv2.putText(image, f"x: {x_3}, y: {y_3}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                image = cv2.putText(image, f"x: {x}, y: {y}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                     (255, 0, 0), 2, cv2.LINE_AA)
-            image = draw_bboxes_red(image, x_3, y_3)
+            image = draw_bboxes_red(image, x, y)
             if jetson_number == 3:
-                x_3 = 1920 - x_3  # note: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
-            cam_3_det = x_y_to_detection(x_3, y_3, index, camera_id=3)
+                x = 1920 - x  # note: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
+            cam_det = x_y_to_detection(x, y, index, camera_id=jetson_number)
 
-            dets.append(cam_3_det)
+            dets.append(cam_det)
 
             if self.visualize_homography:
-                self.visualize_individual_cam_homography(self.tracker, cam_3_det, camera_id=jetson_number)
+                self.visualize_individual_cam_homography(self.tracker, cam_det, camera_id=jetson_number)
         return image
 
     def get_triangulated_images(self, short_video: bool = False) -> Generator:
@@ -142,8 +142,8 @@ class TriangulationVisualization:
 
             dets = []
 
-            image_3 = self.temp_func_name(image_3, box_3, dets, jetson_number=3, index=i)
-            image_1 = self.temp_func_name(image_1, box_1, dets, jetson_number=1, index=i)
+            image_3 = self.process_camera_data(image_3, box_3, dets, jetson_number=3, index=i)
+            image_1 = self.process_camera_data(image_1, box_1, dets, jetson_number=1, index=i)
 
             det = self.tracker.multi_camera_analysis(dets) if dets else None
 
@@ -211,9 +211,10 @@ class TriangulationVisualization:
 
 
 def main():
-    triangulation = TriangulationVisualization(small_dataset=False, use_formplane=False, visualize_homography=True, draw_text=True)
+    triangulation = TriangulationVisualization(small_dataset=False, use_formplane=False, visualize_homography=True,
+                                               draw_text=True)
     # triangulation.run("14_22_time_20_40_14_25__v1__16_1_23.avi.avi", show_images=False, save_video=True)
-    triangulation.run("test_1.avi", show_images=False, save_video=True, short_video=True)
+    triangulation.run("test_3.avi", show_images=False, save_video=True, short_video=True)
 
 
 if __name__ == '__main__':
