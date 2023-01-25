@@ -73,8 +73,8 @@ class MultiCameraTracker:
         """
         # TODO: refactor this function. Reduce its length and complexity
 
-        _detections = self.remove_oob_detections(copy.deepcopy(_detections))
-        detections = self.perform_homography(copy.deepcopy(_detections))
+        _detections = self.remove_oob_detections(_detections)
+        detections = self.perform_homography(_detections)
 
         # Prepare for Triangulation
         # Create a list with the different camera ids
@@ -121,7 +121,6 @@ class MultiCameraTracker:
                         z=0,
                         timestamp=detections[0].timestamp
                     )
-                    print("using homogaphy")
                 else:
                     three_d_estimation = self.internal_height_estimation(detections)
                     three_d_estimation = ThreeDPoints(x=three_d_estimation[0],
@@ -131,8 +130,6 @@ class MultiCameraTracker:
                     if len(three_d_estimation.x) > 1:
                         print(len(three_d_estimation.x))
                         print("okkkkkk")
-
-                print("yolo ooo ya", self.field_model, three_d_estimation)
 
                 if (self.field_model.width > three_d_estimation.x > 0) and \
                         (self.field_model.length > three_d_estimation.y > 0):
