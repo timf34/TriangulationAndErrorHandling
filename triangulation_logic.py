@@ -64,6 +64,34 @@ class MultiCameraTracker:
                 _detections.remove(det)
         return _detections
 
+    @staticmethod
+    def calculate_midpoint(x1: float, y1: float, x2: float, y2: float) -> Tuple[float, float]:
+        """
+        Calculates the midpoint between two points
+        :param x1:
+        :param y1:
+        :param x2:
+        :param y2:
+        :return:
+        """
+        return (x1 + x2) / 2, (y1 + y2) / 2
+
+    def transition_smoothing(self, new_three_d_pos: ThreeDPoints) -> ThreeDPoints:
+        """
+        This method will smooth the transition between 1 and 2 cameras.
+        It will take the last 3D point and use it to smooth the transition...
+        :param new_three_d_pos:
+        :return:
+        """
+
+        if self.three_d_points[-1] == THREE_D_POINTS_FLAG:
+            return new_three_d_pos
+
+        last_point = self.three_d_points[-1]
+        # Calculate the midpoint between the last point and the new point
+        x, y = self.calculate_midpoint(last_point.x, last_point.y, new_three_d_pos.x, new_three_d_pos.y)
+        return ThreeDPoints(x=x, y=y, z=new_three_d_pos.z, timestamp=new_three_d_pos.timestamp)
+
     def two_camera_detection(self, detections: List[Detections], cam_list: List) -> ThreeDPoints:
         """
         This method will take in two detections and triangulate them to get a 3D position of the ball.
@@ -92,12 +120,15 @@ class MultiCameraTracker:
             self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
             three_d_pos = None
 
+        if not self.last_det_used_two_cameras:
+            # Transitioning from 1 camera to 2 cameras
+            three_d_pos = self.transition_smoothing(three_d_pos)
+            self.last_det_used_two_cameras = True
+
         return three_d_pos
 
-    def one_camera_detection(self, detections: List[Detections], cam_list: List) -> ThreeDPoints:
-
-        # In case there are no detections
-        three_d_pos = None
+    # TODO: refactor this method. Too many nests, etc.
+    def one_camera_detection(self, detections: List[Detections], cam_list: List) -> Union[None, ThreeDPoints]:
 
         if self.plane is None:
             self.plane = self.form_plane()
@@ -123,17 +154,25 @@ class MultiCameraTracker:
                     print(len(three_d_estimation.x))
 
             if (self.field_model.width > three_d_estimation.x > 0) and \
-                    (self.field_model.length > three_d_estimation.y > 0):
-                if self.common_sense(three_d_pos):
+                        (self.field_model.length > three_d_estimation.y > 0):
+                # In case there are no detections
+                three_d_pos = None
+
+                if self.common_sense(three_d_estimation):
+
+                    if self.last_det_used_two_cameras:
+                        # Transitioning from two cameras to one camera
+                        three_d_estimation = self.transition_smoothing(three_d_estimation)
+                        self.last_det_used_two_cameras = False
+
                     self.three_d_points.append(copy.deepcopy(three_d_estimation))
-                    three_d_pos = three_d_estimation
+                    return three_d_estimation
                 else:
                     self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
-                    three_d_pos = None
+                    return None
             else:
                 self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
-                three_d_pos = None
-                # print("!!!the detected ball is out of range!!!")
+                return None  # Out of range
 
     def multi_camera_analysis(self, _detections: List[Detections]):
         """
@@ -156,10 +195,10 @@ class MultiCameraTracker:
         three_d_pos = None
 
         if len(detections) == 2:
-            self.two_camera_detection(detections, cam_list)
+            three_d_pos = self.two_camera_detection(detections, cam_list)
 
         if len(detections) == 1:
-            self.one_camera_detection(detections, cam_list)
+            three_d_pos = self.one_camera_detection(detections, cam_list)
 
         return three_d_pos
 
