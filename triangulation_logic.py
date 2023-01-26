@@ -34,6 +34,8 @@ class MultiCameraTracker:
         self.field_model: Tuple = FieldDimensions(68, 105)
         self.use_formplane: bool = use_formplane
 
+        self.last_det_used_two_cameras: bool = False  # This state is used for smoothing transitions between 1 and 2 cameras
+
     def add_camera(self, idx, real_world_camera_coords):
         cam = Camera(
             id=idx,
@@ -62,6 +64,77 @@ class MultiCameraTracker:
                 _detections.remove(det)
         return _detections
 
+    def two_camera_detection(self, detections: List[Detections], cam_list: List) -> ThreeDPoints:
+        """
+        This method will take in two detections and triangulate them to get a 3D position of the ball.
+        :param detections:
+        :param cam_list:
+        :return:
+        """
+
+        # deleting the plane
+        self.plane = None
+
+        cam1 = self.cameras[str(cam_list[0])].real_world_camera_coords
+        cam2 = self.cameras[str(cam_list[1])].real_world_camera_coords
+        three_d_pos = self.triangulate(detections[0], cam1, detections[1], cam2)
+        # this assumes that the detections coming through have the same timestamp
+        three_d_pos = ThreeDPoints(x=three_d_pos[0], y=three_d_pos[1], z=three_d_pos[2],
+                                   timestamp=detections[0].timestamp)
+
+        if (self.field_model.width > three_d_pos.x > 0) and (self.field_model.length > three_d_pos.y > 0):
+            if self.common_sense(three_d_pos):
+                self.three_d_points.append(copy.deepcopy(three_d_pos))
+            else:
+                self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
+                three_d_pos = None
+        else:
+            self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
+            three_d_pos = None
+
+        return three_d_pos
+
+    def one_camera_detection(self, detections: List[Detections], cam_list: List) -> ThreeDPoints:
+
+        # In case there are no detections
+        three_d_pos = None
+
+        if self.plane is None:
+            self.plane = self.form_plane()
+
+        if self.plane is not None:  # Check that the ball was recently detected by two cameras
+
+            # Flag for whether to just use homography or use form plane.
+            if all(np.all(arr == 0) for arr in
+                   self.plane) or not self.use_formplane:  # Check if the plane is all 0's (i.e. if the ball is still) (unncesarily complicated expression as are plane isn't just a single np.array, its 4 in a list atm)
+                three_d_estimation = ThreeDPoints(
+                    x=detections[0].x,
+                    y=detections[0].y,
+                    z=0,
+                    timestamp=detections[0].timestamp
+                )
+            else:
+                three_d_estimation = self.internal_height_estimation(detections)
+                three_d_estimation = ThreeDPoints(x=three_d_estimation[0],
+                                                  y=three_d_estimation[1],
+                                                  z=three_d_estimation[2],
+                                                  timestamp=detections[0].timestamp)
+                if len(three_d_estimation.x) > 1:
+                    print(len(three_d_estimation.x))
+
+            if (self.field_model.width > three_d_estimation.x > 0) and \
+                    (self.field_model.length > three_d_estimation.y > 0):
+                if self.common_sense(three_d_pos):
+                    self.three_d_points.append(copy.deepcopy(three_d_estimation))
+                    three_d_pos = three_d_estimation
+                else:
+                    self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
+                    three_d_pos = None
+            else:
+                self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
+                three_d_pos = None
+                # print("!!!the detected ball is out of range!!!")
+
     def multi_camera_analysis(self, _detections: List[Detections]):
         """
             This method receives detections from all the cameras, and performs all the core multi camera analysis.
@@ -71,7 +144,6 @@ class MultiCameraTracker:
             Args: Detections object iterable
         Returns: 3D world position of the ball
         """
-        # TODO: refactor this function. Reduce its length and complexity
 
         _detections = self.remove_oob_detections(_detections)
         detections = self.perform_homography(_detections)
@@ -84,65 +156,10 @@ class MultiCameraTracker:
         three_d_pos = None
 
         if len(detections) == 2:
-
-            # deleting the plane
-            self.plane = None
-
-            cam1 = self.cameras[str(cam_list[0])].real_world_camera_coords
-            cam2 = self.cameras[str(cam_list[1])].real_world_camera_coords
-            three_d_pos = self.triangulate(detections[0], cam1, detections[1], cam2)
-            # this assumes that the detections coming through have the same timestamp
-            three_d_pos = ThreeDPoints(x=three_d_pos[0], y=three_d_pos[1], z=three_d_pos[2],
-                                       timestamp=detections[0].timestamp)
-
-            if (self.field_model.width > three_d_pos.x > 0) and (self.field_model.length > three_d_pos.y > 0):
-                if self.common_sense(three_d_pos):
-                    self.three_d_points.append(copy.deepcopy(three_d_pos))
-                else:
-                    self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
-                    three_d_pos = None
-            else:
-                self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
-                three_d_pos = None
-                # print("!!!the detected ball is out of range!!!")
+            self.two_camera_detection(detections, cam_list)
 
         if len(detections) == 1:
-            if self.plane is None:
-                self.plane = self.form_plane()
-
-            if self.plane is not None:  # Check that the ball was recently detected by two cameras
-
-
-                # Flag for whether to just use homography or use form plane.
-                if all(np.all(arr == 0) for arr in self.plane) or not self.use_formplane:  # Check if the plane is all 0's (i.e. if the ball is still) (unncesarily complicated expression as are plane isn't just a single np.array, its 4 in a list atm)
-                    three_d_estimation = ThreeDPoints(
-                        x=detections[0].x,
-                        y=detections[0].y,
-                        z=0,
-                        timestamp=detections[0].timestamp
-                    )
-                else:
-                    three_d_estimation = self.internal_height_estimation(detections)
-                    three_d_estimation = ThreeDPoints(x=three_d_estimation[0],
-                                                      y=three_d_estimation[1],
-                                                      z=three_d_estimation[2],
-                                                      timestamp=detections[0].timestamp)
-                    if len(three_d_estimation.x) > 1:
-                        print(len(three_d_estimation.x))
-                        print("okkkkkk")
-
-                if (self.field_model.width > three_d_estimation.x > 0) and \
-                        (self.field_model.length > three_d_estimation.y > 0):
-                    if self.common_sense(three_d_pos):
-                        self.three_d_points.append(copy.deepcopy(three_d_estimation))
-                        three_d_pos = three_d_estimation
-                    else:
-                        self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
-                        three_d_pos = None
-                else:
-                    self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
-                    three_d_pos = None
-                    # print("!!!the detected ball is out of range!!!")
+            self.one_camera_detection(detections, cam_list)
 
         return three_d_pos
 
