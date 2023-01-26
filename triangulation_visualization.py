@@ -99,7 +99,7 @@ class TriangulationVisualization:
             return cv2.putText(self.pitch_image, "3", (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         else:
             color = (255, 0, 0)
-            return cv2.circle(self.pitch_image, (x, y), 15, color, -3)
+            return cv2.circle(self.pitch_image, (x, y), 30, color, -3)
 
     @staticmethod
     def create_plot():
@@ -214,7 +214,7 @@ def main():
     triangulation = TriangulationVisualization(small_dataset=False, use_formplane=False, visualize_homography=True,
                                                draw_text=True)
     # triangulation.run("14_22_time_20_40_14_25__v1__16_1_23.avi.avi", show_images=False, save_video=True)
-    triangulation.run("test_3.avi", show_images=False, save_video=True, short_video=True)
+    triangulation.run("test_4.avi", show_images=False, save_video=True, short_video=False)
 
 
 if __name__ == '__main__':
