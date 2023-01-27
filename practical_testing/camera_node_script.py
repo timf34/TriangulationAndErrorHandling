@@ -1,6 +1,5 @@
 import argparse
 import os
-import sys
 
 # TODO: add code to be able to execute this from within a sub-directory
 
@@ -15,7 +14,7 @@ from triangulation_logic import MultiCameraTracker
 from triangulation_visualization import JETSON1_REAL_WORLD, JETSON3_REAL_WORLD, get_xy_from_box, x_y_to_detection
 
 
-from typing import List, Tuple, Union, Optional, Generator
+from typing import List, Optional, Generator
 
 
 class CameraNodeScript:
@@ -43,7 +42,11 @@ class CameraNodeScript:
                 }
 
             else:
-                cam_det = None
+                payload = {
+                    "camera": self.camera_id,
+                    "detection": None,
+                    "image_path": image_path,
+                }
 
             # Print a progress message
             if i % 500 == 0:
@@ -63,13 +66,13 @@ def main():
     parser.add_argument("-p", "--cameras", action="store", default="jetson1_date_01_04_2022_time__20_40_14_25", dest="cameras", help="The camera path as a string")
     parser.add_argument("-n", "--camera_id", action="store", default="0", dest="camera_id", help="The camera ID (required)")
     parser.add_argument("-c", "--cert_path", action="store",
-                        default="./certificates/tims/camera_send_messages/3da7dc68bfa5d09b723ebb9068a96d54550c1555969088ec7398103e772196d2-certificate.pem.crt",
+                        default="../certificates/tims/camera_send_messages/3da7dc68bfa5d09b723ebb9068a96d54550c1555969088ec7398103e772196d2-certificate.pem.crt",
                         dest="cert_path", help="Cert ending in .pem.crt")
     parser.add_argument("-k", "--priv_key_path", action="store",
-                        default="./certificates/tims/camera_send_messages/3da7dc68bfa5d09b723ebb9068a96d54550c1555969088ec7398103e772196d2-private.pem.key",
+                        default="../certificates/tims/camera_send_messages/3da7dc68bfa5d09b723ebb9068a96d54550c1555969088ec7398103e772196d2-private.pem.key",
                         dest="priv_key_path", help="Private key ending in .pem.key")
     parser.add_argument("-r", "--root_ca_path", action="store",
-                        default="./certificates/tims/camera_send_messages/root.pem",
+                        default="../certificates/tims/camera_send_messages/root.pem",
                         dest="root_ca_path", help="Root CA ending in .pem (usually: AmazonRootCA1.pem")
     parser.add_argument("-u", "--client_id", action="store", default="user5", dest="client_id", help="Username")
     args = parser.parse_args()
