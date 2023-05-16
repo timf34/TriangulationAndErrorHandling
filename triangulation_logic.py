@@ -1,40 +1,41 @@
+# Generally inspired from: https://github.com/HaziqRazali/Soccer-Tracker
+
 import copy
 from collections import namedtuple
-from utils.camera_homography import *
-from utils.data_classes import Camera, Detections, ThreeDPoints
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Tuple
 from matplotlib.path import Path
 
-from python_learning.homography_practice import get_new_homographies
+from utils.camera_homography import *
+from utils.data_classes import Camera, Detections, ThreeDPoints
 from utils.config import get_image_field_coordinates
+
+from python_learning.homography_practice import get_new_homographies
 
 
 JETSON1_REAL_WORLD = np.array([[-19.41], [-21.85], [7.78]])
 JETSON3_REAL_WORLD = np.array([[0.], [86.16], [7.85]])
-MAX_SPEED = 40
-# This is a constant for the ball_speed method and is an arbitrary constant that will need to be changed for once we
-# are set up in real life. But for now, 100 will do as we are dealing with a frame rate of 25 FPS
-MAX_DELTA_T = 75
-
+MAX_SPEED: int = 40
+MAX_DELTA_T: int = 75  # TODO: this should be a config value; it is the maximum number of frames (4 sec timeout @ 25FPS)
 THREE_D_POINTS_FLAG: List[float] = [999., 999., 999.]  # Flag used for when we have no detections
 
-
-# Generally inspired from: https://github.com/HaziqRazali/Soccer-Tracker
+FieldDimensions = namedtuple('FieldDimensions', 'width length')
 
 
 class MultiCameraTracker:
     def __init__(self, use_formplane: bool = True):
         self.cameras: Dict[str, Camera] = {}
-        self.camera_count: int = 0
         self.homographies: Dict = get_new_homographies()  # TODO: this needs refactoring when time to cleanup
         self.image_field_coordinates: Dict[str, Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]]] = get_image_field_coordinates()
         self.three_d_points: List[ThreeDPoints] = []
-        self.plane: List[np.array] = None  # Looks more like Tuple(np.array, np.array, np.array, np.array) - should refactor this!
-        FieldDimensions = namedtuple('FieldDimensions', 'width length')
+        self.plane: Union[List[np.array], None] = None
+        # self.plane: Tuple(np.array, np.array, np.array, np.array) = None
         self.field_model: Tuple = FieldDimensions(68, 105)
         self.use_formplane: bool = use_formplane
-
         self.last_det_used_two_cameras: bool = False  # This state is used for smoothing transitions between 1 and 2 cameras
+
+    @property
+    def camera_count(self):
+        return len(self.cameras)
 
     def add_camera(self, idx, real_world_camera_coords):
         cam = Camera(
@@ -44,7 +45,6 @@ class MultiCameraTracker:
             image_field_coordinates=self.image_field_coordinates[str(idx)]
         )
         self.cameras[str(idx)] = cam
-        self.camera_count = len(self.cameras)
 
     def remove_oob_detections(self, _detections: List[Detections]) -> List[Union[Detections, None]]:
         """
@@ -66,15 +66,7 @@ class MultiCameraTracker:
 
     @staticmethod
     def calculate_midpoint(x1: float, y1: float, x2: float, y2: float) -> Tuple[float, float]:
-        """
-        Calculates the midpoint between two points
-        :param x1:
-        :param y1:
-        :param x2:
-        :param y2:
-        :return:
-        """
-        return (x1 + x2) / 2, (y1 + y2) / 2
+        return np.mean([x1, x2]), np.mean([y1, y2])  # TODO: tighten up typing here
 
     def transition_smoothing(self, new_three_d_pos: ThreeDPoints) -> ThreeDPoints:
         """
@@ -238,7 +230,6 @@ class MultiCameraTracker:
             except IndexError:
                 print("Not enough points to create a plane!")
                 return None
-
 
             temp1 = last_2_points[-1]
             # this is probably not 'good code' but it works, we need to subtract two vectors
