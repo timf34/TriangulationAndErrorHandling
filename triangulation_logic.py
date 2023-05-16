@@ -423,11 +423,19 @@ def get_test_cases() -> List[Dict[str, Union[List[Detections], str]]]:
     return cases
 
 
+def create_tracker_instance() -> MultiCameraTracker:
+    """
+    This function will create a MultiCameraTracker object and add the cameras to it
+    :return: MultiCameraTracker object
+    """
+    _tracker = MultiCameraTracker()
+    _tracker.add_camera(1, JETSON1_REAL_WORLD)
+    _tracker.add_camera(3, JETSON3_REAL_WORLD)
+    return _tracker
+
+
 if __name__ == '__main__':
-    yolo = MultiCameraTracker()
-    # adding cameras to the tracker object
-    yolo.add_camera(1, JETSON1_REAL_WORLD)
-    yolo.add_camera(3, JETSON3_REAL_WORLD)
+    yolo = create_tracker_instance()
 
     cases = get_test_cases()
 
