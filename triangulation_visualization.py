@@ -230,7 +230,7 @@ class TriangulationVisualization:
         # Loop through self.get_triangulated_images(); update the plot; write the frame to the video
         for i in self.get_triangulated_images(short_video):
             img1, img2, pitch_image = i
-            self.process_and_save_frame(img1, img2, pitch_image, video_writer=out, show_images=show_images)
+            self.process_and_save_frame(img1, img2, pitch_image, video_writer=video_writer, show_images=show_images)
 
         self.timer.stop()
         print(f"Time taken: {self.timer.get_elapsed_time()}")
@@ -244,7 +244,7 @@ def main():
     triangulation = TriangulationVisualization(small_dataset=False, use_formplane=False, visualize_homography=False,
                                                draw_text=False)
     # triangulation.run("14_22_time_20_40_14_25__v1__16_1_23.avi.avi", show_images=False, save_video=True)
-    triangulation.run("test_5_with_smoothing_no_text.avi", show_images=False, save_video=False, short_video=True)
+    triangulation.run("test_5_with_smoothing_no_text.avi", show_images=False, save_video=True, short_video=True)
 
 
 if __name__ == '__main__':
