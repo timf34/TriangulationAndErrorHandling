@@ -4,30 +4,16 @@ from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 
-from typing import Tuple, List, Generator, Union
+from typing import Tuple, List, Generator
 
 from data.bohs_dataset import create_triangulation_dataset
 from utils.data_classes import Detections
 from utils.timer import Timer
+from utils.utils import x_y_to_detection, get_xy_from_box, draw_bboxes_red
 from triangulation_logic import MultiCameraTracker
 
 JETSON1_REAL_WORLD = np.array([[-19.41], [-21.85], [7.78]])
 JETSON3_REAL_WORLD = np.array([[0.], [86.16], [7.85]])
-
-
-def draw_bboxes_red(image, x, y):
-    return cv2.circle(image, (int(x), int(y)), 5, (255, 0, 0), 2)
-
-
-def get_xy_from_box(box: List[Tuple[int, int, int, int]]) -> Tuple[float, float]:
-    box = box[0]
-    x = (box[0] + box[2]) / 2
-    y = (box[1] + box[3]) / 2
-    return x, y
-
-
-def x_y_to_detection(x_1, y_1, i, camera_id: int) -> Detections:
-    return Detections(camera_id=camera_id, probability=0.9, timestamp=i, x=x_1, y=y_1, z=0)
 
 
 class TriangulationVisualization:
@@ -44,7 +30,7 @@ class TriangulationVisualization:
         self.timer: Timer = Timer()
         self.use_formplane = use_formplane
 
-        self.tracker = MultiCameraTracker(use_formplane=self.use_formplane)
+        self.tracker = MultiCameraTracker(use_formplane=self.use_formplane)  # TODO: this should be passed in
         self.tracker.add_camera(1, JETSON1_REAL_WORLD)
         self.tracker.add_camera(3, JETSON3_REAL_WORLD)
         self.draw_text: bool = draw_text
@@ -71,7 +57,7 @@ class TriangulationVisualization:
         cam_hom.x, cam_hom.y = self.convert_det_to_pixels(cam_hom)
         self.pitch_image = self.draw_point(int(cam_hom.x), int(cam_hom.y), camera_id=camera_id)
 
-    def draw_point(self, x, y, camera_id: int = None) -> np.array:
+    def draw_point(self, x: int, y: int, camera_id: int = None) -> np.array:
         """
         This function allows us to draw a point on self.pitch_image. Note we have to call cv2.circle before cv2.putText
         because cv2.putText draws on top of the image.
@@ -80,26 +66,36 @@ class TriangulationVisualization:
         :param y: y coordinate of point
         :return: image with point drawn on it
         """
+        # Limit x and y to be within pitch boundaries.
         if x <= 0 or x >= self.pitch_width or y <= 0 or y >= self.pitch_height:
-            # print(f"x and y must be between {self.pitch_width} and {self.pitch_height} - but got {x} and {y}")
             x = 0
             y = 0
 
-        if camera_id == 1:
-            color = (0, 255, 0)
-            if not self.draw_text:
-                return cv2.circle(self.pitch_image, (x, y), 20, color, -3)
-            cv2.circle(self.pitch_image, (x, y), 20, color, -3)
-            return cv2.putText(self.pitch_image, "1", (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
-        elif camera_id == 3:
-            color = (0, 0, 255)
-            if not self.draw_text:
-                return cv2.circle(self.pitch_image, (x, y), 20, color, -3)
-            cv2.circle(self.pitch_image, (x, y), 20, color, -3)
-            return cv2.putText(self.pitch_image, "3", (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-        else:
-            color = (255, 0, 0)
-            return cv2.circle(self.pitch_image, (x, y), 25, color, -3)
+        # Define color mappings for different camera ids.
+        color_mapping = {1: ((0, 255, 0), (0, 0, 0)),
+                         3: ((0, 0, 255), (255, 255, 255)),
+                         None: ((255, 0, 0), None)}
+
+        # Set color based on camera id.
+        color, text_color = color_mapping.get(camera_id, ((255, 0, 0), None))
+
+        # Draw a circle at the given point.
+        cv2.circle(self.pitch_image, (x, y), 20, color, -3)
+
+        # If draw_text is True and camera_id is provided, draw a text at the given point.
+        if self.draw_text and camera_id in {1, 3}:
+            cv2.putText(
+                self.pitch_image,
+                str(camera_id),
+                (x, y),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                text_color,
+                2,
+            )
+
+        # Return the updated image.
+        return self.pitch_image
 
     @staticmethod
     def create_plot():
@@ -211,10 +207,10 @@ class TriangulationVisualization:
 
 
 def main():
-    triangulation = TriangulationVisualization(small_dataset=False, use_formplane=False, visualize_homography=True,
-                                               draw_text=True)
+    triangulation = TriangulationVisualization(small_dataset=False, use_formplane=False, visualize_homography=False,
+                                               draw_text=False)
     # triangulation.run("14_22_time_20_40_14_25__v1__16_1_23.avi.avi", show_images=False, save_video=True)
-    triangulation.run("test_4_with_smoothing.avi", show_images=False, save_video=True, short_video=False)
+    triangulation.run("test_5_with_smoothing_no_text.avi", show_images=False, save_video=True, short_video=True)
 
 
 if __name__ == '__main__':
