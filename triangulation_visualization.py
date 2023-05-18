@@ -105,29 +105,51 @@ class TriangulationVisualization:
 
     def process_camera_data(self,
                             image: np.ndarray,
-                            box: Tuple[int, int, int, int],
+                            box: np.ndarray,
                             dets: List,
                             jetson_number: int,
                             index: int
                             ) -> np.ndarray:
         """
+        Process data from camera. This includes drawing bounding boxes on the image, transforming
+        x, y coordinates based on specific camera properties, appending the detection to a list,
+        and visualizing homography if applicable.
 
-        :return:
+        :param image: The image to process.
+        :param box: A numpy array representing the box. Size is 4 when full, 0 when empty.
+        :param dets: A list of detections.
+        :param jetson_number: An identifier for the camera.
+        :param index: The index of the detection.
+        :return: The processed image.
         """
+
+        # Process box if it's not empty
         if box.size != 0:
             x, y = get_xy_from_box(box)
-            if self.draw_text:
-                image = cv2.putText(image, f"x: {x}, y: {y}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1,
-                                    (255, 0, 0), 2, cv2.LINE_AA)
-            image = draw_bboxes_red(image, x, y)
-            if jetson_number == 3:
-                x = 1920 - x  # note: mirroring for Jetson3 to bring the origins a bit closer together in the diff plances (in my mind at least, haven't tested to see if it works better yet)
-            cam_det = x_y_to_detection(x, y, index, camera_id=jetson_number)
 
+            # Draw text on the image if needed
+            if self.draw_text:
+                text = f"x: {x}, y: {y}"
+                color = (255, 0, 0)
+                image = cv2.putText(image, text, (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2, cv2.LINE_AA)
+
+            # Draw bounding boxes on the image
+            image = draw_bboxes_red(image, x, y)
+
+            # Adjust x for Jetson3
+            if jetson_number == 3:
+                # note: mirroring for Jetson3 to bring the origins a bit closer together
+                # in the diff planes (in my mind at least, haven't tested to see if it works better yet)
+                x = 1920 - x
+
+                # Transform x, y to detection and append to list
+            cam_det = x_y_to_detection(x, y, index, camera_id=jetson_number)
             dets.append(cam_det)
 
+            # Visualize homography if needed
             if self.visualize_homography:
                 self.visualize_individual_cam_homography(self.tracker, cam_det, camera_id=jetson_number)
+
         return image
 
     def get_triangulated_images(self, short_video: bool = False) -> Generator:
@@ -210,7 +232,7 @@ def main():
     triangulation = TriangulationVisualization(small_dataset=False, use_formplane=False, visualize_homography=False,
                                                draw_text=False)
     # triangulation.run("14_22_time_20_40_14_25__v1__16_1_23.avi.avi", show_images=False, save_video=True)
-    triangulation.run("test_5_with_smoothing_no_text.avi", show_images=False, save_video=True, short_video=True)
+    triangulation.run("test_5_with_smoothing_no_text.avi", show_images=False, save_video=False, short_video=True)
 
 
 if __name__ == '__main__':
