@@ -316,7 +316,7 @@ class MultiCameraTracker:
         # if self.ball_speed(possible_detection) > MAX_SPEED:
         #     return False
 
-        return True
+        return True\
 
     def ball_speed(self, possible_detection):
         # Also note that this method can only be called when the ball has relatively successive detections so the ball
@@ -391,22 +391,37 @@ def get_test_cases() -> List[Dict[str, Union[List[Detections], str]]]:
     """
     cases = [
         {
-            "detections": [Detections(camera_id=3, probability=0.9, timestamp=9, x=1017, y=298, z=0),
-                           Detections(camera_id=1, probability=0.9, timestamp=9, x=508, y=764, z=0)
-                           ],
+            "detections": [
+                Detections(camera_id=3, probability=0.9, timestamp=9, x=488, y=452, z=0)
+            ],
+            "expected": "just calling this for internal height estimation"
+        },
+        {
+            "detections": [
+                Detections(camera_id=3, probability=0.9, timestamp=9, x=1017, y=298, z=0),
+                Detections(camera_id=1, probability=0.9, timestamp=9, x=508, y=764, z=0)
+            ],
             "expected": "40, 10 ish"
         },
         {
-            "detections": [Detections(camera_id=3, probability=0.9, timestamp=9, x=891, y=284, z=0),
-                           Detections(camera_id=1, probability=0.9, timestamp=9, x=274, y=754, z=0)
-                           ],
+            "detections": [
+                Detections(camera_id=3, probability=0.9, timestamp=9, x=891, y=284, z=0),
+                Detections(camera_id=1, probability=0.9, timestamp=9, x=274, y=754, z=0)
+            ],
             "expected": "50, 10 ish"
         },
         {
-            "detections": [Detections(camera_id=3, probability=0.9, timestamp=9, x=488, y=452, z=0),
-                           Detections(camera_id=1, probability=0.9, timestamp=9, x=1153, y=665, z=0)
-                           ],
+            "detections": [
+                Detections(camera_id=3, probability=0.9, timestamp=9, x=488, y=452, z=0),
+                Detections(camera_id=1, probability=0.9, timestamp=9, x=1153, y=665, z=0)
+            ],
             "expected": "25, 50 ish"
+        },
+        {
+            "detections": [
+                Detections(camera_id=3, probability=0.9, timestamp=9, x=488, y=452, z=0)
+            ],
+            "expected": "just calling this for internal height estimation"
         },
 
     ]
