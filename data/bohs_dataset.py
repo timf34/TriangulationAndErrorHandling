@@ -13,6 +13,7 @@ from data.utils import read_bohs_ground_truth
 BALL_BBOX_SIZE = 20
 BALL_LABEL = 1
 
+
 # I could have probably used inheritance here to some extent at least... IDK
 
 
@@ -32,10 +33,10 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
                  only_matching_frames: bool = True,
                  small_dataset: bool = False,
                  cameras: Union[List[str], Tuple] = (
-                     # "jetson3_1_4_2022_time__19_45_01_4",
-                     # "jetson1_date_01_04_2022_time__19_45_01_4",
-                     "jetson3_1_4_2022_time__20_40_14_25",
-                     "jetson1_date_01_04_2022_time__20_40_14_25"
+                         # "jetson3_1_4_2022_time__19_45_01_4",
+                         # "jetson1_date_01_04_2022_time__19_45_01_4",
+                         "jetson3_1_4_2022_time__20_40_14_25",
+                         "jetson1_date_01_04_2022_time__20_40_14_25"
                  ),
 
                  ):
@@ -69,8 +70,6 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
         self.annotations_folder_path = os.path.join(self.dataset_path, 'annotations')
 
         self.get_image_list()  # Sets self.image_list
-
-
 
         self.n_images = len(self.image_list)
         print(f"Total number of Bohs Images: {self.n_images}")
@@ -170,7 +169,6 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
         # Convert image_ndx to int -> 'frame_0000001' -> 1
         image_ndx = int(image_ndx[-7:])
 
-
         ball_pos = self.gt_annotations[camera_id].ball_pos[int(image_ndx)]
         if ball_pos != [[]]:
             for (x, y) in ball_pos:
@@ -208,16 +206,19 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
 
             for frame in self.gt_annotations[self.cameras[0]].ball_pos.keys():
                 if frame in self.gt_annotations[self.cameras[1]].ball_pos.keys():
-                    if self.gt_annotations[self.cameras[0]].ball_pos[frame] != [[]] and self.gt_annotations[self.cameras[1]].ball_pos[frame] != [[]]:  # If both cameras have the ball
+                    if self.gt_annotations[self.cameras[0]].ball_pos[frame] != [[]] and \
+                            self.gt_annotations[self.cameras[1]].ball_pos[frame] != [
+                        []]:  # If both cameras have the ball
                         matching_frames.append(frame)
 
             image_list: List[str, str, str, str, str, str] = []
 
             for frame in matching_frames:
-
                 frame = str(frame).zfill(self.image_name_length)
-                image_path_1 = os.path.join(self.image_folder_path, self.cameras[0], f'frame_{frame}{self.image_extension}')
-                image_path_2 = os.path.join(self.image_folder_path, self.cameras[1], f'frame_{frame}{self.image_extension}')
+                image_path_1 = os.path.join(self.image_folder_path, self.cameras[0],
+                                            f'frame_{frame}{self.image_extension}')
+                image_path_2 = os.path.join(self.image_folder_path, self.cameras[1],
+                                            f'frame_{frame}{self.image_extension}')
                 image_list.append((image_path_1, image_path_2, self.cameras[0], self.cameras[1], frame, frame))
 
         else:
@@ -248,9 +249,8 @@ class TriangulationBohsDataset(torch.utils.data.Dataset):
 
             # Note that each image_list has all frames. So we can just iterate through the shorter list. But do note that it doesn't neccessarily start from the start. This is very hacky but will just get it done for now.
             for i in range(shorter_list_length):
-                image_list.append((image_list_1[i][0], image_list_2[i][0], self.cameras[0], self.cameras[1], f"frame_{image_list_1[i][2]}", f"frame_{image_list_2[i][2]}"))
-
-
+                image_list.append((image_list_1[i][0], image_list_2[i][0], self.cameras[0], self.cameras[1],
+                                   f"frame_{image_list_1[i][2]}", f"frame_{image_list_2[i][2]}"))
 
         # Update all our variables to reflect the new image list
         self.image_list = image_list
@@ -292,6 +292,7 @@ class SingleCameraTriangulationDataset(TriangulationBohsDataset):
 
         TODO: the inheritance should be the other way around! Since we aren't using the get_matching_frames func.
     """
+
     def __init__(self, cameras: List[str]):
         self.cameras = cameras
         super().__init__(start_frame=677, end_frame=750, cameras=cameras)
@@ -300,7 +301,7 @@ class SingleCameraTriangulationDataset(TriangulationBohsDataset):
 
     def __getitem__(self, ndx):
         # Returns transferred image as a normalized tensor
-        image_path_1, camera_id_1, image_ndx_1= self.image_list[ndx]
+        image_path_1, camera_id_1, image_ndx_1 = self.image_list[ndx]
 
         image_1 = Image.open(image_path_1)
 
@@ -331,7 +332,6 @@ def create_triangulation_dataset(
         end_frame: int = 800,
         single_camera: bool = False,
 ):
-
     if cameras is None:
         # cameras = ["jetson3_1_4_2022_time__20_40_14_25"]
         cameras = ["jetson1_date_01_04_2022_time__20_40_14_25"]
@@ -346,16 +346,16 @@ def create_triangulation_dataset(
             small_dataset=small_dataset,
             start_frame=start_frame,
             end_frame=end_frame,
-    )
+        )
 
 
 def main():
-    single_camera=True
+    single_camera = True
     dataset = create_triangulation_dataset(single_camera=single_camera)
 
     for i in range(len(dataset)):
         if single_camera:
-            image_1, box_1, label_1, image_path_1= dataset[i]
+            image_1, box_1, label_1, image_path_1 = dataset[i]
             print(dataset.image_list)
             print(image_path_1)
             print(box_1)
