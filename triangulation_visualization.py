@@ -12,11 +12,11 @@ from utils.timer import Timer
 from utils.utils import x_y_to_detection, get_xy_from_box, draw_bboxes_red
 from triangulation_logic import MultiCameraTracker
 
-JETSON1_REAL_WORLD = np.array([[-19.41], [-21.85], [7.78]])
-JETSON3_REAL_WORLD = np.array([[0.], [86.16], [7.85]])
-
 
 class TriangulationVisualization:
+    JETSON1_REAL_WORLD = np.array([[-19.41], [-21.85], [7.78]])
+    JETSON3_REAL_WORLD = np.array([[0.], [86.16], [7.85]])
+
     def __init__(self,
                  small_dataset=False,
                  use_formplane: bool = False,
@@ -31,8 +31,8 @@ class TriangulationVisualization:
         self.use_formplane = use_formplane
 
         self.tracker = MultiCameraTracker(use_formplane=self.use_formplane)  # TODO: this should be passed in
-        self.tracker.add_camera(1, JETSON1_REAL_WORLD)
-        self.tracker.add_camera(3, JETSON3_REAL_WORLD)
+        self.tracker.add_camera(1, self.JETSON1_REAL_WORLD)
+        self.tracker.add_camera(3, self.JETSON3_REAL_WORLD)
         self.draw_text: bool = draw_text
         self.visualize_homography: bool = visualize_homography
 
@@ -184,6 +184,36 @@ class TriangulationVisualization:
 
             yield image_3, image_1, self.pitch_image
 
+    def process_and_save_frame(
+            self,
+            img1,
+            img2,
+            pitch_image,
+            video_writer=None,
+            show_images: bool = False
+    ) -> None:
+        # Convert all images to RGB
+        img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
+        img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
+        pitch_image = cv2.cvtColor(pitch_image, cv2.COLOR_BGR2RGB)
+
+        # Resize images
+        img1 = cv2.resize(img1, (1280, 720))
+        img2 = cv2.resize(img2, (1280, 720))
+        pitch_image = cv2.resize(pitch_image, (1280, 720))
+
+        # Stack the images together
+        stacked_image = np.vstack((img1, img2, pitch_image))
+
+        # Show image if required
+        if show_images:
+            cv2.imshow("Stacked image", stacked_image)
+            cv2.waitKey(1)
+
+        # Save video frame if required
+        if video_writer:
+            video_writer.write(stacked_image)
+
     def run(self,
             video_name: str,
             show_images: bool = False,
@@ -191,41 +221,23 @@ class TriangulationVisualization:
             short_video: bool = False,
             ) -> None:
         # Create a cv2 VideoWriter object
+        video_writer = None
         if save_video:
-            out = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*'XVID'), 60, (1280, 2160))
+            video_writer = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*'XVID'), 60, (1280, 2160))
 
         self.timer.start()
 
         # Loop through self.get_triangulated_images(); update the plot; write the frame to the video
         for i in self.get_triangulated_images(short_video):
             img1, img2, pitch_image = i
-
-            # Convert all images to RGB
-            img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
-            img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
-            pitch_image = cv2.cvtColor(pitch_image, cv2.COLOR_BGR2RGB)
-
-            # Resize images
-            img1 = cv2.resize(img1, (1280, 720))
-            img2 = cv2.resize(img2, (1280, 720))
-            pitch_image = cv2.resize(pitch_image, (1280, 720))
-
-            # Stack the images together
-            stacked_image = np.vstack((img1, img2))
-            stacked_image = np.vstack((stacked_image, pitch_image))
-
-            if show_images:
-                cv2.imshow("Stacked image", stacked_image)
-                cv2.waitKey(0)
-            if save_video:
-                out.write(stacked_image)
+            self.process_and_save_frame(img1, img2, pitch_image, video_writer=out, show_images=show_images)
 
         self.timer.stop()
         print(f"Time taken: {self.timer.get_elapsed_time()}")
 
         # Release the VideoWriter object
         if save_video:
-            out.release()
+            video_writer.release()
 
 
 def main():
