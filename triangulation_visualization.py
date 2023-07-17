@@ -14,6 +14,14 @@ from triangulation_logic import MultiCameraTracker
 
 
 class TriangulationVisualization:
+    """
+    This class is used to visualize the triangulation logic. It is not used in the actual prod code.
+
+    What we need is:
+    - TriangulationBohsDataset object (dataset with dets from both cameras)
+        - This dataset contains the images from the cameras also!
+    - Video from both cameras
+    """
     JETSON1_REAL_WORLD = np.array([[-19.41], [-21.85], [7.78]])
     JETSON3_REAL_WORLD = np.array([[0.], [86.16], [7.85]])
 
@@ -28,7 +36,7 @@ class TriangulationVisualization:
         self.pitch_width: int = self.pitch_image.shape[1]
         self.pitch_height: int = self.pitch_image.shape[0]
         self.timer: Timer = Timer()
-        self.use_formplane = use_formplane
+        self.use_formplane: bool = use_formplane
 
         self.tracker = MultiCameraTracker(use_formplane=self.use_formplane)  # TODO: this should be passed in
         self.tracker.add_camera(1, self.JETSON1_REAL_WORLD)
