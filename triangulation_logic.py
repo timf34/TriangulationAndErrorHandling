@@ -166,7 +166,7 @@ class MultiCameraTracker:
                 self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
                 return None  # Out of range
 
-    def multi_camera_analysis(self, _detections: List[Detections]):
+    def multi_camera_analysis(self, _detections: List[Detections]) -> ThreeDPoints:
         """
             This method receives detections from all the cameras, and performs all the core multi camera analysis.
             It will receive the detections from arrll of the cameras, triangulate if possible, or give a best estimate
@@ -316,7 +316,7 @@ class MultiCameraTracker:
         # if self.ball_speed(possible_detection) > MAX_SPEED:
         #     return False
 
-        return True\
+        return True
 
     def ball_speed(self, possible_detection):
         # Also note that this method can only be called when the ball has relatively successive detections so the ball
