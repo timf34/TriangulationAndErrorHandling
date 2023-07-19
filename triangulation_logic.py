@@ -8,7 +8,6 @@ from matplotlib.path import Path
 from utils.camera_homography import *
 from utils.data_classes import Camera, Detections, ThreeDPoints
 from utils.config import get_image_field_coordinates
-
 from python_learning.homography_practice import get_new_homographies
 
 
@@ -417,6 +416,7 @@ def get_test_cases() -> List[Dict[str, Union[List[Detections], str]]]:
             ],
             "expected": "25, 50 ish"
         },
+        # TODO: This throws an error rn:') Fix it later
         {
             "detections": [
                 Detections(camera_id=3, probability=0.9, timestamp=9, x=488, y=452, z=0)
@@ -455,21 +455,3 @@ if __name__ == '__main__':
 
         print(f"Expected: {case['expected']}, Result: {result}")
 
-    # d1 = Detections(camera_id=1, probability=0.9, timestamp=12, x=1062, y=817, z=0)
-    # d2 = Detections(camera_id=3, probability=0.9, timestamp=12, x=1408, y=310, z=0)
-    # x = yolo.multi_camera_analysis([d1, d2])
-    # print("result from 2 detections: ", x)
-    #
-    # # to form the plane
-    # d1 = Detections(camera_id=1, probability=0.9, timestamp=12, x=1062, y=817, z=0)
-    # d2 = Detections(camera_id=3, probability=0.9, timestamp=12, x=1402, y=310, z=0)
-    # x = yolo.multi_camera_analysis([d1, d2])
-    #
-    # x = yolo.multi_camera_analysis([d1])
-    # print("result from 1 detection: ", x)
-    #
-    # x = yolo.multi_camera_analysis([d2])
-    # print("result from 1 detection: ", x)
-    #
-    # x = yolo.multi_camera_analysis([])
-    # print("result from 0 detections: ", x)
