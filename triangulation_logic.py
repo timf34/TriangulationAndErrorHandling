@@ -15,7 +15,7 @@ JETSON1_REAL_WORLD = np.array([[-19.41], [-21.85], [7.78]])
 JETSON3_REAL_WORLD = np.array([[0.], [86.16], [7.85]])
 MAX_SPEED: int = 40
 MAX_DELTA_T: int = 75  # TODO: this should be a config value; it is the maximum number of frames (4 sec timeout @ 25FPS)
-THREE_D_POINTS_FLAG: List[ThreeDPoints] = [ThreeDPoints(x=999., y=999., z=999., timestamp=0)]  # Flag used for when we have no detections
+THREE_D_POINTS_FLAG: ThreeDPoints = ThreeDPoints(x=999., y=999., z=999., timestamp=0)  # Flag used for when we have no detections
 
 FieldDimensions = namedtuple('FieldDimensions', 'width length')
 
@@ -25,7 +25,7 @@ class MultiCameraTracker:
         self.cameras: Dict[str, Camera] = {}
         self.homographies: Dict = get_new_homographies()  # TODO: this needs refactoring when time to cleanup
         self.image_field_coordinates: Dict[str, Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]]] = get_image_field_coordinates()
-        self.three_d_points: List[ThreeDPoints] = THREE_D_POINTS_FLAG  # Initialize with a flag
+        self.three_d_points: List[ThreeDPoints] = [THREE_D_POINTS_FLAG]  # Initialize with a flag
         self.plane: Union[List[np.array], None] = None
         # self.plane: Tuple(np.array, np.array, np.array, np.array) = None
         self.field_model: Tuple = FieldDimensions(68, 105)
@@ -78,17 +78,23 @@ class MultiCameraTracker:
 
     def transition_smoothing(self, new_three_d_pos: ThreeDPoints) -> ThreeDPoints:
         """
-        This method will smooth the transition when moving between having info from 1 camera to 2 cameras and vice versa.
-        For example, if the ball is obsrtucted from one camera, and then the code switches to using the pure homography
-        from the other camera. It will take the last 3D point and use it to smooth the transition...
+        This method is called when we are transitioning between using 1 camera and 2 cameras.
+        It will smooth the transition by taking the last 3D point and using it to calculate the midpoint between the last 3D point and
+        the new 3D point.
+
+        For example, if we go from having detections from two cameras, and are using a triangulated ball position,
+        to only having a detection from one camera and need to use its pure homography, this method will smooth the
+        transition.
+
         :param new_three_d_pos (ThreeDPoints): The new 3D position of the ball
         :returns: Smoothed 3D position of the ball
         """
+        last_point = self.three_d_points[-1]
 
-        if self.three_d_points[-1] == THREE_D_POINTS_FLAG:
+        if last_point == THREE_D_POINTS_FLAG:
+
             return new_three_d_pos
 
-        last_point = self.three_d_points[-1]
         # Calculate the midpoint between the last point and the new point
         x, y = self.calculate_midpoint(last_point.x, last_point.y, new_three_d_pos.x, new_three_d_pos.y)
         return ThreeDPoints(x=x, y=y, z=new_three_d_pos.z, timestamp=new_three_d_pos.timestamp)
