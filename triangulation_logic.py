@@ -33,10 +33,18 @@ class MultiCameraTracker:
         self.last_det_used_two_cameras: bool = False  # This state is used for smoothing transitions between 1 and 2 cameras
 
     @property
-    def camera_count(self):
+    def camera_count(self) -> int:
+        """
+        Returns the number of cameras in the MultiCameraTracker object.
+        """
         return len(self.cameras)
 
-    def add_camera(self, idx, real_world_camera_coords):
+    def add_camera(self, idx: int, real_world_camera_coords: Tuple):
+        """
+        Adds a camera to the MultiCameraTracker object.
+        :param idx (int): The camera ID
+        :param real_world_camera_coords (Tuple): The real world coordinates of the camera
+        """
         cam = Camera(
             id=idx,
             homography=self.homographies[str(idx)],
@@ -48,12 +56,11 @@ class MultiCameraTracker:
     def remove_oob_detections(self, _detections: List[Detections]) -> List[Union[Detections, None]]:
         """
         Removes any detections that are out of bounds of the field in the image frame.
-        Args:
-            _detections (List[Detections]): List of detections objects
-        Returns:
-            List[Union[Detections, None]]: List of detections objects with the out of bound detections removed.
-        """
+        The image field coords/ bounds are currently set in utils.config in the get_image_field_coordinates() function
 
+        :param _detections (List[Detections]): List of detections objects
+        :return _detections (List[Union[Detections, None]]): List of detections objects with the out of bound detections removed.
+        """
         for det in _detections.copy():
             image_field_coordinates = self.image_field_coordinates[str(det.camera_id)]
             # Create the path of the rhombus
@@ -65,14 +72,17 @@ class MultiCameraTracker:
 
     @staticmethod
     def calculate_midpoint(x1: float, y1: float, x2: float, y2: float) -> Tuple[float, float]:
-        return np.mean([x1, x2]), np.mean([y1, y2])  # TODO: tighten up typing here
+        # TODO: fix typing here - returning np array, not floats as expected
+        #  I might want to generally go through my code, and ensure its all typed correctly, numpy wise
+        return np.mean([x1, x2]), np.mean([y1, y2])
 
     def transition_smoothing(self, new_three_d_pos: ThreeDPoints) -> ThreeDPoints:
         """
-        This method will smooth the transition between 1 and 2 cameras.
-        It will take the last 3D point and use it to smooth the transition...
-        :param new_three_d_pos:
-        :return:
+        This method will smooth the transition when moving between having info from 1 camera to 2 cameras and vice versa.
+        For example, if the ball is obsrtucted from one camera, and then the code switches to using the pure homography
+        from the other camera. It will take the last 3D point and use it to smooth the transition...
+        :param new_three_d_pos (ThreeDPoints): The new 3D position of the ball
+        :returns: Smoothed 3D position of the ball
         """
 
         if self.three_d_points[-1] == THREE_D_POINTS_FLAG:
@@ -171,8 +181,10 @@ class MultiCameraTracker:
             It will receive the detections from arrll of the cameras, triangulate if possible, or give a best estimate
             of where the ball most likely is (note: that I will make other functions to help handle some of these tasks
             but they will all be put together here)
-            Args: Detections object iterable
-        Returns: 3D world position of the ball
+            Args:
+                _detections: Detections object iterable
+            Returns:
+                3D world position of the ball
         """
 
         _detections = self.remove_oob_detections(_detections)
