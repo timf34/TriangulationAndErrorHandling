@@ -15,7 +15,7 @@ JETSON1_REAL_WORLD = np.array([[-19.41], [-21.85], [7.78]])
 JETSON3_REAL_WORLD = np.array([[0.], [86.16], [7.85]])
 MAX_SPEED: int = 40
 MAX_DELTA_T: int = 75  # TODO: this should be a config value; it is the maximum number of frames (4 sec timeout @ 25FPS)
-THREE_D_POINTS_FLAG: List[float] = [999., 999., 999.]  # Flag used for when we have no detections
+THREE_D_POINTS_FLAG: List[ThreeDPoints] = [ThreeDPoints(x=999., y=999., z=999., timestamp=0)]  # Flag used for when we have no detections
 
 FieldDimensions = namedtuple('FieldDimensions', 'width length')
 
@@ -25,7 +25,7 @@ class MultiCameraTracker:
         self.cameras: Dict[str, Camera] = {}
         self.homographies: Dict = get_new_homographies()  # TODO: this needs refactoring when time to cleanup
         self.image_field_coordinates: Dict[str, Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]]] = get_image_field_coordinates()
-        self.three_d_points: List[ThreeDPoints] = []
+        self.three_d_points: List[ThreeDPoints] = THREE_D_POINTS_FLAG  # Initialize with a flag
         self.plane: Union[List[np.array], None] = None
         # self.plane: Tuple(np.array, np.array, np.array, np.array) = None
         self.field_model: Tuple = FieldDimensions(68, 105)
