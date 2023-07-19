@@ -25,6 +25,7 @@ class ThreeDPoints:
     timestamp: float
 
 
+# TODO: add more precise typing here
 class Camera(NamedTuple):
     id: int
     homography: list
