@@ -1,2 +1,0 @@
-Unfortunately can't seem to just import the Python project itself, so going to copy paste for now. Not sure what was 
-going wrong, but the module couldn't be found... Try on a smaller scale soon with some random stuff just to get it working. 
