@@ -254,7 +254,8 @@ class MultiCameraTracker:
         for det in detections:
             temp = self.homographies[str(det.camera_id)] @ np.array([[det.x], [det.y], [1.0]], dtype=object)
             temp = temp / temp[2]
-            det.x, det.y = temp[0], temp[1]
+            temp = temp.tolist()
+            det.x, det.y = temp[0][0], temp[1][0]
             dets_.append(det)
 
         return dets_
