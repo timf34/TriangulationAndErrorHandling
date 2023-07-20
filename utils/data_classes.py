@@ -25,6 +25,52 @@ class ThreeDPoints:
     timestamp: float
 
 
+
+from dataclasses import dataclass
+
+@dataclass
+class DetectionError:
+    """
+    Base dataclass representing a detection error, containing the 3D coordinates
+    of the erroneous detection (x, y, z) and the time of the detection (timestamp).
+    """
+
+    x: float
+    y: float
+    z: float
+    timestamp: float
+
+    @classmethod
+    def from_three_d_points(cls, threedpoints: ThreeDPoints):
+        """
+        Creates a DetectionError instance from a ThreeDPoints object, preserving coordinates and timestamp.
+
+        Args:
+            threedpoints (ThreeDPoints): The ThreeDPoints object to convert.
+
+        Returns:
+            DetectionError: A DetectionError instance with the same attributes as the input ThreeDPoints object.
+        """
+        return cls(threedpoints.x, threedpoints.y, threedpoints.z, threedpoints.timestamp)
+
+
+@dataclass
+class OutOfBounds(DetectionError):
+    """
+    Dataclass representing an out-of-bounds detection.
+    Inherits from DetectionError and retains the same structure and methods.
+    """
+
+
+@dataclass
+class FailedCommonSense(DetectionError):
+    """
+    Dataclass representing a detection that failed the 'common_sense' test.
+    Inherits from DetectionError and retains the same structure and methods.
+    """
+
+
+
 # TODO: add more precise typing here
 class Camera(NamedTuple):
     id: int
