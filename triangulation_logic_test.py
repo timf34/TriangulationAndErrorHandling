@@ -195,18 +195,20 @@ class TestMultiCameraTracker(unittest.TestCase):
         self.assertEqual(type(result1[0].x), float)
         self.assertEqual(type(result2[0].x), float)
 
-
-
-    def test_form_plan(self):
+    def test_form_plane(self):
+        # TODO: this seems somewhat tricky to test, will come back to it later.
         pass
 
     def test_common_sense(self):
+        # TODO: actual function is not implemented yet
         pass
 
     def test_ball_speed(self):
+        # TODO: actual function is not implemented yet
         pass
 
     def test_triangulate(self):
+        # TODO: come back to this in a little bit.
         pass
 
     def test_internal_height_estimation(self):
