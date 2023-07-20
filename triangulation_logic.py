@@ -92,7 +92,6 @@ class MultiCameraTracker:
         last_point = self.three_d_points[-1]
 
         if last_point == THREE_D_POINTS_FLAG:
-
             return new_three_d_pos
 
         # Calculate the midpoint between the last point and the new point
@@ -177,11 +176,8 @@ class MultiCameraTracker:
 
             if (self.field_model.width > three_d_estimation.x > 0) and \
                     (self.field_model.length > three_d_estimation.y > 0):
-                # In case there are no detections
-                three_d_pos = None
 
                 if self.common_sense(three_d_estimation):
-
                     if self.last_det_used_two_cameras:
                         # Transitioning from two cameras to one camera
                         three_d_estimation = self.transition_smoothing(three_d_estimation)
@@ -215,9 +211,8 @@ class MultiCameraTracker:
             Returns:
                 3D world position of the ball
         """
-        # TODO: right now, it'll return None if all the dets are oob
+        # TODO: right now, it'll return None if all the dets are oob. This isn't good.
         _detections = self.remove_oob_detections(_detections)
-        # TODO: they get wrappe in np arrays here
         detections = self.perform_homography(_detections)
 
         # Prepare for Triangulation
@@ -230,7 +225,7 @@ class MultiCameraTracker:
         if len(detections) == 2:
             three_d_pos = self.two_camera_detection(detections, cam_list)
 
-        if len(detections) == 1:
+        elif len(detections) == 1:
             three_d_pos = self.one_camera_detection(detections)
 
         else:
