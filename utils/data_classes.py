@@ -24,9 +24,20 @@ class ThreeDPoints:
     z: float
     timestamp: float
 
+    @classmethod
+    def three_d_point_from_det(cls, det: Detections):
+        """
+        Creates a ThreeDPoints instance from a Detections object, preserving coordinates and timestamp.
+
+        Args:
+            det (Detections): The Detections object to convert.
+
+        Returns:
+            ThreeDPoints: A ThreeDPoints instance with the same attributes as the input Detections object.
+        """
+        return cls(det.x, det.y, det.z, det.timestamp)
 
 
-from dataclasses import dataclass
 
 @dataclass
 class DetectionError:
