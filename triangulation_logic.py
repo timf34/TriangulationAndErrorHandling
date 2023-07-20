@@ -6,7 +6,7 @@ from typing import Dict, List, Union, Tuple
 from matplotlib.path import Path
 
 from utils.camera_homography import *
-from utils.data_classes import Camera, Detections, ThreeDPoints
+from utils.data_classes import Camera, Detections, ThreeDPoints, OutOfBounds, FailedCommonSense
 from utils.config import get_image_field_coordinates
 from python_learning.homography_practice import get_new_homographies
 
@@ -102,9 +102,9 @@ class MultiCameraTracker:
     def two_camera_detection(self, detections: List[Detections], cam_list: List) -> ThreeDPoints:
         """
         This method will take in two detections and triangulate them to get a 3D position of the ball.
-        :param detections:
+        :param detections: List of detections of length two
         :param cam_list:
-        :return:
+        :return: Triangulated ThreeDPoints object with the 3D position of the ball
         """
 
         # deleting the plane
@@ -122,10 +122,10 @@ class MultiCameraTracker:
                 self.three_d_points.append(copy.deepcopy(three_d_pos))
             else:
                 self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
-                three_d_pos = None
+                three_d_pos = FailedCommonSense.from_three_d_points(three_d_pos)
         else:
             self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
-            three_d_pos = None
+            three_d_pos = OutOfBounds.from_three_d_points(three_d_pos)
 
         if not self.last_det_used_two_cameras:
             # Transitioning from 1 camera to 2 cameras
@@ -135,11 +135,26 @@ class MultiCameraTracker:
         return three_d_pos
 
     # TODO: refactor this method. Too many nests, etc.
-    def one_camera_detection(self, detections: List[Detections], cam_list: List) -> Union[None, ThreeDPoints]:
+    def one_camera_detection(
+            self,
+            detections: List[Detections],
+    ) -> Union[OutOfBounds, FailedCommonSense, ThreeDPoints]:
+        """
+
+        Args:
+            detections: List of detections (but where there's only one detection in the list)
+        Returns:
+            ThreeDPoints object with the 3D position of the ball
+            None if there isn't previous data to form a plan (and the homographied detection remains untouched)
+            OutOfBounds if the ball is out of bounds
+            FailedCommonSense if the ball is moving too fast
+        """
 
         if self.plane is None:
             self.plane = self.form_plane()
 
+        # TODO: this exits if we don't have data to form a plane. I think we should instead probably just return the
+        #  detection but with the homography applied to it.
         if self.plane is not None:  # Check that the ball was recently detected by two cameras
 
             # Flag for whether to just use homography or use form plane.
@@ -153,15 +168,15 @@ class MultiCameraTracker:
                 )
             else:
                 three_d_estimation = self.internal_height_estimation(detections)
-                three_d_estimation = ThreeDPoints(x=three_d_estimation[0],
-                                                  y=three_d_estimation[1],
-                                                  z=three_d_estimation[2],
-                                                  timestamp=detections[0].timestamp)
-                if len(three_d_estimation.x) > 1:
-                    print(len(three_d_estimation.x))
+                three_d_estimation = ThreeDPoints(
+                    x=three_d_estimation[0],
+                    y=three_d_estimation[1],
+                    z=three_d_estimation[2],
+                    timestamp=detections[0].timestamp
+                )
 
             if (self.field_model.width > three_d_estimation.x > 0) and \
-                        (self.field_model.length > three_d_estimation.y > 0):
+                    (self.field_model.length > three_d_estimation.y > 0):
                 # In case there are no detections
                 three_d_pos = None
 
@@ -176,10 +191,18 @@ class MultiCameraTracker:
                     return three_d_estimation
                 else:
                     self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
-                    return None
+                    return FailedCommonSense.from_three_d_points(three_d_estimation)
             else:
                 self.three_d_points.append(copy.deepcopy(THREE_D_POINTS_FLAG))
-                return None  # Out of range
+                return OutOfBounds.from_three_d_points(three_d_estimation)
+        else:
+            # Return the detection as a ThreeDPoints object unchanged
+            return ThreeDPoints(
+                x=detections[0].x,
+                y=detections[0].y,
+                z=0,
+                timestamp=detections[0].timestamp
+            )
 
     def multi_camera_analysis(self, _detections: List[Detections]) -> ThreeDPoints:
         """
@@ -192,8 +215,9 @@ class MultiCameraTracker:
             Returns:
                 3D world position of the ball
         """
-
+        # TODO: right now, it'll return None if all the dets are oob
         _detections = self.remove_oob_detections(_detections)
+        # TODO: they get wrappe in np arrays here
         detections = self.perform_homography(_detections)
 
         # Prepare for Triangulation
@@ -207,7 +231,11 @@ class MultiCameraTracker:
             three_d_pos = self.two_camera_detection(detections, cam_list)
 
         if len(detections) == 1:
-            three_d_pos = self.one_camera_detection(detections, cam_list)
+            three_d_pos = self.one_camera_detection(detections)
+
+        else:
+            # Temp fix
+            three_d_pos = OutOfBounds(x=0, y=0, z=0, timestamp=0)
 
         return three_d_pos
 
@@ -272,6 +300,7 @@ class MultiCameraTracker:
 
         return plane
 
+    # TODO: fix the typing and data types here, its all over the place
     def internal_height_estimation(self, detections):
         # There will be just one detection if this function is called
         # This function estimates the height of the ball in the scenario where there is just one detection
@@ -298,8 +327,13 @@ class MultiCameraTracker:
                 # TODO: need to check if this is the best way to handle this, or if we even should be getting a
                 #  ZeroDivisionError here (when the ball stays in the same position)
 
+            # Change from (3, 1) to (3,)
+            da = da.reshape(3,)
+            c = c.reshape(3,)
+            t = t.reshape(1,)
+
             # Point of intersection
-            intersection = [(da[0] * t + c[0]), (da[1] * t + c[1]), (da[1] * t + c[1])]
+            intersection = float((da[0] * t + c[0])), float((da[1] * t + c[1])), float((da[1] * t + c[1]))
 
             return intersection
 
