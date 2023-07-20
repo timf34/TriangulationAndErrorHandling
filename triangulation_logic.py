@@ -72,8 +72,6 @@ class MultiCameraTracker:
 
     @staticmethod
     def calculate_midpoint(x1: float, y1: float, x2: float, y2: float) -> Tuple[float, float]:
-        # TODO: fix typing here - returning np array, not floats as expected
-        #  I might want to generally go through my code, and ensure its all typed correctly, numpy wise
         return np.mean([x1, x2]), np.mean([y1, y2])
 
     def transition_smoothing(self, new_three_d_pos: ThreeDPoints) -> ThreeDPoints:
@@ -96,6 +94,8 @@ class MultiCameraTracker:
 
         # Calculate the midpoint between the last point and the new point
         x, y = self.calculate_midpoint(last_point.x, last_point.y, new_three_d_pos.x, new_three_d_pos.y)
+        x = float(x)
+        y = float(y)
         return ThreeDPoints(x=x, y=y, z=new_three_d_pos.z, timestamp=new_three_d_pos.timestamp)
 
     def two_camera_detection(self, detections: List[Detections], cam_list: List) -> ThreeDPoints:
