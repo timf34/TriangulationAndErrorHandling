@@ -174,7 +174,28 @@ class TestMultiCameraTracker(unittest.TestCase):
         self.assertEqual(type(three_d_point.x), float)
 
     def test_perform_homogrpahy(self):
-        pass
+        det1 = [
+            Detections(camera_id=3, probability=0.9, timestamp=9, x=488, y=452, z=0)
+        ]
+
+        dets = [
+            Detections(camera_id=3, probability=0.9, timestamp=9, x=488, y=452, z=0),
+            Detections(camera_id=1, probability=0.9, timestamp=9, x=1153, y=665, z=0)
+        ]
+
+        result1 = self.tracker.perform_homography(det1)
+        result2 = self.tracker.perform_homography(dets)
+
+        self.assertEqual(type(result1), list)
+        self.assertEqual(type(result2), list)
+        self.assertEqual(len(result1), 1)
+        self.assertEqual(len(result2), 2)
+        self.assertEqual(type(result1[0]), Detections)
+        self.assertEqual(type(result2[0]), Detections)
+        self.assertEqual(type(result1[0].x), float)
+        self.assertEqual(type(result2[0].x), float)
+
+
 
     def test_form_plan(self):
         pass
