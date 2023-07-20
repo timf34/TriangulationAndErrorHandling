@@ -3,6 +3,8 @@
 import copy
 from collections import namedtuple
 from typing import Dict, List, Union, Tuple
+
+import numpy as np
 from matplotlib.path import Path
 from statistics import mean
 
@@ -354,6 +356,7 @@ class MultiCameraTracker:
             return [_x, _y]
 
     def common_sense(self, possible_detection):
+        # TODO: not implemented
         # This method will return a boolean whether or not the proposed detection is possible.
 
         # Currently we are only checking for ball speed, but this should be extended
@@ -363,7 +366,8 @@ class MultiCameraTracker:
 
         return True
 
-    def ball_speed(self, possible_detection):
+    def ball_speed(self, possible_detection: Detections) -> float:
+        # TODO: not implemented
         # Also note that this method can only be called when the ball has relatively successive detections so the ball
         # doesn't curve around a good bit (the ball is in a relatively straight line)
 
@@ -386,7 +390,7 @@ class MultiCameraTracker:
         return distance / delta_t if delta_t != 0 else 99999  # Speed
 
     @staticmethod
-    def triangulate(ball_p, cam_p, ball_q, cam_q):
+    def triangulate(ball_p: Detections, cam_p: np.ndarray, ball_q: Detections, cam_q: np.ndarray) -> List[float]:
         """
         ballP and ballQ are inputs of the ball's coordinates. For now we will assume they have already be mapped to the real
         world coordinate system through a homography and that they have attributes
