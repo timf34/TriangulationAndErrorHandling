@@ -111,6 +111,7 @@ class MultiCameraTracker:
 
         cam1 = self.cameras[str(cam_list[0])].real_world_camera_coords
         cam2 = self.cameras[str(cam_list[1])].real_world_camera_coords
+        # TODO: gains np.arrays here
         three_d_pos = self.triangulate(detections[0], cam1, detections[1], cam2)
         # this assumes that the detections coming through have the same timestamp
         three_d_pos = ThreeDPoints(x=three_d_pos[0], y=three_d_pos[1], z=three_d_pos[2],
@@ -224,10 +225,8 @@ class MultiCameraTracker:
 
         if len(detections) == 2:
             three_d_pos = self.two_camera_detection(detections, cam_list)
-
         elif len(detections) == 1:
             three_d_pos = self.one_camera_detection(detections)
-
         else:
             # Temp fix
             three_d_pos = OutOfBounds(x=0, y=0, z=0, timestamp=0)
@@ -425,8 +424,8 @@ class MultiCameraTracker:
 
         midpoint = (shortest_point1 + shortest_point2) / 2
 
-        # Convert ndarray: (3, 1) to list of ints
-        intersection = [midpoint[0], midpoint[1], midpoint[2]]
+        # This is to convert the numpy array to a list
+        intersection = [midpoint[0].item(), midpoint[1].item(), midpoint[2].item()]
 
         return intersection
 
