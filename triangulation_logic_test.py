@@ -3,6 +3,7 @@ import numpy as np
 import unittest
 
 from triangulation_logic import MultiCameraTracker, Detections, create_tracker_instance, ThreeDPoints
+from utils.data_classes import OutOfBounds
 
 
 class TestMultiCameraTracker(unittest.TestCase):
@@ -51,8 +52,8 @@ class TestMultiCameraTracker(unittest.TestCase):
         midpoint = self.tracker.calculate_midpoint(0., 0., 2., 2.)
         self.assertEqual(midpoint, (1, 1))
         self.assertEqual(type(midpoint), tuple)
-        self.assertEqual(type(midpoint[0]), np.float64)  # Note: I might change this type later, but its this for now.
-        self.assertEqual(type(midpoint[1]), np.float64)
+        self.assertEqual(type(midpoint[0]), float)
+        self.assertEqual(type(midpoint[1]), float)
 
     def test_transition_smoothing(self):
         """
@@ -77,32 +78,115 @@ class TestMultiCameraTracker(unittest.TestCase):
         self.assertEqual(smoothed_det1.y, 25.)
         self.assertEqual(smoothed_det2.x, 25.)
         self.assertEqual(smoothed_det2.y, 25.)
-
-
+        self.assertEqual(type(smoothed_det1.x), float)
+        self.assertEqual(type(smoothed_det2.y), float)
 
     def test_two_camera_detection(self):
-        raise NotImplementedError
+        """
+        Test that the two_camera_detection function returns the correct ThreeDPoint object.
+
+        Args to the two_camera_detection function is a list of Detections of length 2, and the camera ids of the two
+        cameras that detected the ball.
+        """
+        dets = [
+            Detections(camera_id=1, probability=0.9, timestamp=12, x=10, y=817, z=0),
+            Detections(camera_id=3, probability=0.9, timestamp=12, x=100, y=417, z=0)
+        ]
+        cam_list = [1, 3]
+        three_d_point = self.tracker.two_camera_detection(dets, cam_list)
+        self.assertEqual(type(three_d_point), OutOfBounds)
+        self.assertEqual(type(three_d_point.x), float)
 
     def test_one_camera_detection(self):
-        raise NotImplementedError
+        """
+        Test that the one_camera_detection function returns the correct ThreeDPoint object.
+        """
+        det = [
+            Detections(camera_id=1, probability=0.9, timestamp=12, x=10, y=817, z=0)
+        ]
+        three_d_point = self.tracker.one_camera_detection(det)
+        self.assertEqual(type(three_d_point), ThreeDPoints)
+        self.assertTrue(isinstance(three_d_point.x, (float, int)))  # TODO: note this returns ints in ThreeDPoints atm
 
     def test_multi_camera_analysis(self):
-        raise NotImplementedError
+        """
+        Test that the multi_camera_analysis function returns the correct ThreeDPoint object.
 
-    def tets_perform_homogrpahy(self):
-        raise NotImplementedError
+        Will need to test for multiple scenarios here...
+        """
+        # One detection, camera 1
+        det = [
+            Detections(camera_id=1, probability=0.9, timestamp=12, x=10, y=817, z=0),
+        ]
+        three_d_point = self.tracker.multi_camera_analysis(det)
+        print("1. ", three_d_point)
+        self.assertEqual(type(three_d_point), ThreeDPoints)
+        self.assertEqual(type(three_d_point.x), float)
+
+        # One detection, camera 3
+        det = [
+            Detections(camera_id=3, probability=0.9, timestamp=12, x=10, y=817, z=0),
+        ]
+        three_d_point = self.tracker.multi_camera_analysis(det)
+        print("2. ", three_d_point)
+        self.assertEqual(type(three_d_point), OutOfBounds)
+
+        # Two detections, camera 1 and 3
+        dets = [
+            Detections(camera_id=1, probability=0.9, timestamp=12, x=10, y=817, z=0),
+            Detections(camera_id=3, probability=0.9, timestamp=12, x=10, y=817, z=0),
+        ]
+        three_d_point = self.tracker.multi_camera_analysis(dets)
+        print("3. ", three_d_point)
+        self.assertEqual(type(three_d_point), ThreeDPoints)
+
+        # Again
+        dets = [
+            Detections(camera_id=1, probability=0.9, timestamp=12, x=100, y=817, z=0),
+            Detections(camera_id=3, probability=0.9, timestamp=12, x=69, y=817, z=0),
+        ]
+        three_d_point = self.tracker.multi_camera_analysis(dets)
+        print("4. ", three_d_point)
+        self.assertEqual(type(three_d_point), ThreeDPoints)
+
+        dets = [
+            Detections(camera_id=3, probability=0.9, timestamp=9, x=891, y=284, z=0),
+            Detections(camera_id=1, probability=0.9, timestamp=9, x=274, y=754, z=0)
+        ]
+        three_d_point = self.tracker.multi_camera_analysis(dets)
+        print("5. ", three_d_point)
+
+        dets = [
+            Detections(camera_id=3, probability=0.9, timestamp=9, x=488, y=452, z=0),
+            Detections(camera_id=1, probability=0.9, timestamp=9, x=1153, y=665, z=0)
+        ]
+        three_d_point = self.tracker.multi_camera_analysis(dets)
+        print("6. ", three_d_point)
+        self.assertEqual(type(three_d_point), ThreeDPoints)
+
+        # Another one
+        det = [
+            Detections(camera_id=3, probability=0.9, timestamp=9, x=488, y=452, z=0)
+        ]
+        three_d_point = self.tracker.multi_camera_analysis(det)
+        print("7. ", three_d_point)
+        self.assertEqual(type(three_d_point), ThreeDPoints)
+        self.assertEqual(type(three_d_point.x), float)
+
+    def test_perform_homogrpahy(self):
+        pass
 
     def test_form_plan(self):
-        raise NotImplementedError
+        pass
 
     def test_common_sense(self):
-        raise NotImplementedError
+        pass
 
     def test_ball_speed(self):
-        raise NotImplementedError
+        pass
 
     def test_triangulate(self):
-        raise NotImplementedError
+        pass
 
     def test_internal_height_estimation(self):
         processed_val = [Detections(camera_id=3, probability=0.9, timestamp=9, x=8.874453020053366, y=22.255735859466892, z=0, x_hom=0.0, y_hom=0.0)]
