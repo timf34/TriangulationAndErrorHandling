@@ -4,6 +4,7 @@ import copy
 from collections import namedtuple
 from typing import Dict, List, Union, Tuple
 from matplotlib.path import Path
+from statistics import mean
 
 from utils.camera_homography import *
 from utils.data_classes import Camera, Detections, ThreeDPoints, OutOfBounds, FailedCommonSense
@@ -72,7 +73,7 @@ class MultiCameraTracker:
 
     @staticmethod
     def calculate_midpoint(x1: float, y1: float, x2: float, y2: float) -> Tuple[float, float]:
-        return np.mean([x1, x2]), np.mean([y1, y2])
+        return mean([x1, x2]), mean([y1, y2])
 
     def transition_smoothing(self, new_three_d_pos: ThreeDPoints) -> ThreeDPoints:
         """
@@ -94,8 +95,6 @@ class MultiCameraTracker:
 
         # Calculate the midpoint between the last point and the new point
         x, y = self.calculate_midpoint(last_point.x, last_point.y, new_three_d_pos.x, new_three_d_pos.y)
-        x = float(x)
-        y = float(y)
         return ThreeDPoints(x=x, y=y, z=new_three_d_pos.z, timestamp=new_three_d_pos.timestamp)
 
     def two_camera_detection(self, detections: List[Detections], cam_list: List) -> ThreeDPoints:
