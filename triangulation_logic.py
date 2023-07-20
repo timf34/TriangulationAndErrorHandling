@@ -232,7 +232,7 @@ class MultiCameraTracker:
 
         return three_d_pos
 
-    def perform_homography(self, detections: List[Detections]):
+    def perform_homography(self, detections: List[Detections]) -> List[Detections]:
 
         """
         Just a convenience method however should maybe change the Detections class/ structure so that it automatically
