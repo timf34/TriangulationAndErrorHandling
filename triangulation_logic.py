@@ -73,6 +73,29 @@ class MultiCameraTracker:
                 _detections.remove(det)
         return _detections
 
+    # TODO: Remove the None type once I figure out how to handle the case where we have no detections if they're all
+    #  removed by the remove_oob_detections() method above (should use the OutOfBounds class somehow)
+    @staticmethod
+    def filter_most_confident_dets(_detections: Union[List[Detections], None]) -> List[Union[Detections, None]]:
+        """
+        Filters the detections to only the most confident detection for each camera if there are multiple detections.
+        We only want the most confident detection for each camera.
+        """
+        if _detections is None:
+            return None
+
+        # Create a dictionary of camera_id: detection
+        camera_dict = {}
+        for det in _detections:
+            if det.camera_id not in camera_dict:
+                camera_dict[det.camera_id] = det
+            elif det.probability > camera_dict[det.camera_id].probability:
+                camera_dict[det.camera_id] = det
+
+        # Return the values of the dictionary as a list
+        return list(camera_dict.values())
+
+
     @staticmethod
     def calculate_midpoint(x1: float, y1: float, x2: float, y2: float) -> Tuple[float, float]:
         return mean([x1, x2]), mean([y1, y2])
@@ -215,6 +238,7 @@ class MultiCameraTracker:
         """
         # TODO: right now, it'll return None if all the dets are oob. This isn't good.
         _detections = self.remove_oob_detections(_detections)
+        _detections = self.filter_most_confident_dets(_detections)
         detections = self.perform_homography(_detections)
 
         # Prepare for Triangulation

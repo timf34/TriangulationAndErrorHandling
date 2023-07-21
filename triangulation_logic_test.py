@@ -220,6 +220,17 @@ class TestMultiCameraTracker(unittest.TestCase):
         self.assertAlmostEqual(int(height[2]), 77)
         # Note: this test could be cleaned up!
 
+    def test_filter_most_confident_dets(self):
+        dets = [
+            Detections(camera_id=3, probability=0.9, timestamp=9, x=488, y=452, z=0),
+            Detections(camera_id=3, probability=0.94, timestamp=9, x=420, y=69, z=0),
+            Detections(camera_id=1, probability=0.6, timestamp=8, x=69, y=420, z=0),
+            Detections(camera_id=1, probability=0.9, timestamp=9, x=1153, y=665, z=0)
+        ]
+        filtered_dets = self.tracker.filter_most_confident_dets(dets)
+        self.assertEqual(len(filtered_dets), 2)
+        self.assertEqual(filtered_dets[0].probability, 0.94)
+        self.assertEqual(filtered_dets[1].probability, 0.9)
 
 if __name__ == "__main__":
     unittest.main()
