@@ -429,7 +429,8 @@ class MultiCameraTracker:
         ball_p = np.array([[ball_p.x], [ball_p.y], [ball_p.z]], dtype=object)
         ball_q = np.array([[ball_q.x], [ball_q.y], [ball_q.z]], dtype=object)
 
-        l1 = ball_p - cam_p  # direction vectors
+        l1 = ball_p - cam_p  # direction vectors (i.e. from camera to
+        # ball)
         l2 = ball_q - cam_q
 
         r1 = np.vdot(l1, l1)  # this is the squared norm/ magnitude of L1

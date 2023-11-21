@@ -35,6 +35,7 @@ class ThreeDPoints:
         Returns:
             ThreeDPoints: A ThreeDPoints instance with the same attributes as the input Detections object.
         """
+        # TODO: I sometimes set z to 0 (not really sure why tbh), so will need to account for that
         return cls(det.x, det.y, det.z, det.timestamp)
 
 

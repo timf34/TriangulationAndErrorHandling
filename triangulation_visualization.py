@@ -252,7 +252,7 @@ def main():
     triangulation = TriangulationVisualization(small_dataset=False, use_formplane=False, visualize_homography=False,
                                                draw_text=False)
     # triangulation.run("14_22_time_20_40_14_25__v1__16_1_23.avi.avi", show_images=False, save_video=True)
-    triangulation.run("test_5_with_smoothing_no_text.avi", show_images=False, save_video=True, short_video=True)
+    triangulation.run("test_5_with_smoothing_no_text.avi", show_images=False, save_video=True, short_video=False)
 
 
 if __name__ == '__main__':
